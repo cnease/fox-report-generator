@@ -67,17 +67,17 @@ export default function ReportsPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow">
+      <div className="mx-auto max-w-5xl rounded-2xl bg-white p-8 text-gray-900 shadow">
         <UserHeader />
 
-        <h1 className="mb-2 text-3xl font-bold">Saved Reports</h1>
-        <p className="mb-4 text-gray-600">
+        <h1 className="mb-2 text-3xl font-bold text-gray-900">Saved Reports</h1>
+        <p className="mb-4 text-gray-700">
           View previously generated Fox Pest Control service reports.
         </p>
 
         <div className="mb-6">
           <input
-            className="w-full rounded-lg border p-3"
+            className="w-full rounded-lg border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             type="text"
             placeholder="Search by customer, address, or pest type"
             value={search}
@@ -85,7 +85,7 @@ export default function ReportsPage() {
           />
         </div>
 
-        {loading && <p>Loading reports...</p>}
+        {loading && <p className="text-gray-900">Loading reports...</p>}
 
         {message && (
           <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
@@ -94,7 +94,7 @@ export default function ReportsPage() {
         )}
 
         {!loading && !message && filteredReports.length === 0 && (
-          <p className="rounded bg-gray-100 p-4 text-sm">
+          <p className="rounded bg-gray-100 p-4 text-sm text-gray-900">
             No matching reports found.
           </p>
         )}
@@ -103,11 +103,11 @@ export default function ReportsPage() {
           {filteredReports.map((report) => (
             <div
               key={report.id}
-              className="rounded-xl border border-gray-200 bg-gray-50 p-5"
+              className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-gray-900"
             >
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-xl font-semibold text-gray-900">
                     {report.customer_name}
                   </h2>
                   <p className="text-sm text-gray-600">
@@ -137,11 +137,11 @@ export default function ReportsPage() {
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold">Generated Email</h3>
+                  <h3 className="font-semibold text-gray-900">Generated Email</h3>
                   <CopyButton text={report.generated_email || ""} />
                 </div>
 
-                <pre className="whitespace-pre-wrap rounded-lg border bg-white p-4 text-sm">
+                <pre className="whitespace-pre-wrap rounded-lg border bg-white p-4 text-sm text-gray-900">
                   {report.generated_email || "-"}
                 </pre>
               </div>

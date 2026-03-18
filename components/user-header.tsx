@@ -55,63 +55,61 @@ export default function UserHeader() {
 
   if (loading) {
     return (
-      <div className="mb-4 flex items-center justify-between gap-4 rounded-xl bg-gray-100 p-4">
-        <p className="text-sm text-gray-500">Loading user...</p>
+      <div className="mb-6 rounded-xl bg-gray-100 p-4 text-gray-900">
+        <p className="text-sm text-gray-600">Loading user...</p>
       </div>
     );
   }
 
   return (
-    <div className="mb-6 flex flex-col gap-4 rounded-xl bg-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-sm text-gray-500">Signed in as</p>
-        <p className="font-semibold">
-          {profile?.full_name || profile?.email || "Unknown User"}
-        </p>
-        <p className="text-sm text-gray-600">
-          Role: {profile?.role || "unknown"}
-        </p>
+    <div className="mb-6 rounded-xl bg-gray-100 p-4 text-gray-900">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-sm text-gray-500">Signed in as</p>
+          <p className="text-base font-semibold text-gray-900">
+            {profile?.full_name || profile?.email || "Unknown User"}
+          </p>
+          <p className="text-sm text-gray-600">
+            Role: {profile?.role || "unknown"}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/"
+            className="rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white"
+          >
+            Home
+          </Link>
+
+          <Link
+            href="/reports"
+            className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white"
+          >
+            View Reports
+          </Link>
+
+          {profile?.role === "admin" && (
+            <>
+              <Link
+                href="/admin"
+                className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Admin Dashboard
+              </Link>
+
+              <Link
+                href="/admin/reports"
+                className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                All Reports
+              </Link>
+            </>
+          )}
+
+          <LogoutButton />
+        </div>
       </div>
-
-      <div className="flex flex-wrap gap-3">
-  {/* ✅ Home Button */}
-  <Link
-    href="/"
-    className="rounded bg-gray-800 px-4 py-2 text-white"
-  >
-    Home
-  </Link>
-
-  {/* Reports */}
-  <Link
-    href="/reports"
-    className="rounded bg-green-600 px-4 py-2 text-white"
-  >
-    View Reports
-  </Link>
-
-  {/* Admin buttons */}
-  {profile?.role === "admin" && (
-    <>
-      <Link
-        href="/admin"
-        className="rounded bg-blue-600 px-4 py-2 text-white"
-      >
-        Admin Dashboard
-      </Link>
-
-      <Link
-        href="/admin/reports"
-        className="rounded bg-purple-600 px-4 py-2 text-white"
-      >
-        All Reports
-      </Link>
-    </>
-  )}
-
-  {/* Logout */}
-  <LogoutButton />
-</div>
     </div>
   );
 }

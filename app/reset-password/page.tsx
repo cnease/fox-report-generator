@@ -45,15 +45,17 @@ export default function ResetPasswordPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow">
-        <h1 className="mb-2 text-3xl font-bold">Update Password</h1>
-        <p className="mb-6 text-gray-600">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 text-gray-900 shadow">
+        <h1 className="mb-2 text-3xl font-bold text-gray-900">
+          Update Password
+        </h1>
+        <p className="mb-6 text-gray-700">
           You must change your starter password before continuing.
         </p>
 
         <form onSubmit={handleReset} className="grid gap-4">
           <input
-            className="rounded border p-3"
+            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             type="password"
             placeholder="New Password"
             value={password}
@@ -70,7 +72,9 @@ export default function ResetPasswordPage() {
         </form>
 
         {message && (
-          <p className="mt-4 rounded bg-gray-100 p-3 text-sm">{message}</p>
+          <p className="mt-4 rounded bg-gray-100 p-3 text-sm text-gray-900">
+            {message}
+          </p>
         )}
       </div>
     </main>

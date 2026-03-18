@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import UserHeader from "@/components/user-header";
+import CopyButton from "@/components/copy-button";
 
 type Report = {
   id: string;
@@ -65,13 +66,15 @@ export default function AdminReportsPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-6xl rounded-2xl bg-white p-8 shadow">
+      <div className="mx-auto max-w-6xl rounded-2xl bg-white p-8 text-gray-900 shadow">
         <UserHeader />
 
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">All Technician Reports</h1>
-            <p className="text-gray-600">
+            <h1 className="text-3xl font-bold text-gray-900">
+              All Technician Reports
+            </h1>
+            <p className="text-gray-700">
               Admin view of all saved Fox Pest Control reports.
             </p>
           </div>
@@ -86,7 +89,7 @@ export default function AdminReportsPage() {
 
         <div className="mb-6">
           <input
-            className="w-full rounded-lg border p-3"
+            className="w-full rounded-lg border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             type="text"
             placeholder="Search by customer, address, pest type, technician name, or technician email"
             value={search}
@@ -94,7 +97,7 @@ export default function AdminReportsPage() {
           />
         </div>
 
-        {loading && <p>Loading all reports...</p>}
+        {loading && <p className="text-gray-900">Loading all reports...</p>}
 
         {message && (
           <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
@@ -103,7 +106,7 @@ export default function AdminReportsPage() {
         )}
 
         {!loading && !message && filteredReports.length === 0 && (
-          <p className="rounded bg-gray-100 p-4 text-sm">
+          <p className="rounded bg-gray-100 p-4 text-sm text-gray-900">
             No matching reports found.
           </p>
         )}
@@ -112,11 +115,11 @@ export default function AdminReportsPage() {
           {filteredReports.map((report) => (
             <div
               key={report.id}
-              className="rounded-xl border border-gray-200 bg-gray-50 p-5"
+              className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-gray-900"
             >
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-xl font-semibold text-gray-900">
                     {report.customer_name}
                   </h2>
                   <p className="text-sm text-gray-600">
@@ -151,8 +154,14 @@ export default function AdminReportsPage() {
               </div>
 
               <div>
-                <h3 className="mb-2 font-semibold">Generated Email</h3>
-                <pre className="whitespace-pre-wrap rounded-lg border bg-white p-4 text-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">
+                    Generated Email
+                  </h3>
+                  <CopyButton text={report.generated_email || ""} />
+                </div>
+
+                <pre className="whitespace-pre-wrap rounded-lg border bg-white p-4 text-sm text-gray-900">
                   {report.generated_email || "-"}
                 </pre>
               </div>

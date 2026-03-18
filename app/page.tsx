@@ -1,9 +1,9 @@
 "use client";
 
-import CopyButton from "@/components/copy-button";
 import { FormEvent, useState } from "react";
 import UserHeader from "@/components/user-header";
 import { createClient } from "@/lib/supabase/client";
+import CopyButton from "@/components/copy-button";
 
 export default function Home() {
   const [customerName, setCustomerName] = useState("");
@@ -86,40 +86,40 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow">
+      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 text-gray-900 shadow">
         <UserHeader />
 
-        <h1 className="mb-2 text-3xl font-bold">
+        <h1 className="mb-2 text-3xl font-bold text-gray-900">
           Fox Pest Control Report Generator
         </h1>
-        <p className="mb-6 text-gray-600">
+        <p className="mb-6 text-gray-700">
           Enter inspection details and generate a standardized customer email.
         </p>
 
         <form onSubmit={handleSubmit} className="grid gap-4">
           <input
-            className="rounded border p-3"
+            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Customer Name"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
           />
 
           <input
-            className="rounded border p-3"
+            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Service Address"
             value={serviceAddress}
             onChange={(e) => setServiceAddress(e.target.value)}
           />
 
           <input
-            className="rounded border p-3"
+            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Pest Type"
             value={pestType}
             onChange={(e) => setPestType(e.target.value)}
           />
 
           <textarea
-            className="rounded border p-3"
+            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Inspection Findings"
             rows={4}
             value={findings}
@@ -127,7 +127,7 @@ export default function Home() {
           />
 
           <textarea
-            className="rounded border p-3"
+            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Treatment Performed"
             rows={4}
             value={treatment}
@@ -144,17 +144,19 @@ export default function Home() {
         </form>
 
         {output && (
-  <div className="mt-8">
-    <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-xl font-semibold">Generated Email</h2>
-      <CopyButton text={output} />
-    </div>
+          <div className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Generated Email
+              </h2>
+              <CopyButton text={output} />
+            </div>
 
-    <pre className="whitespace-pre-wrap rounded-lg bg-gray-100 p-4 text-sm">
-      {output}
-    </pre>
-  </div>
-)}
+            <pre className="whitespace-pre-wrap rounded-lg bg-gray-100 p-4 text-sm text-gray-900">
+              {output}
+            </pre>
+          </div>
+        )}
       </div>
     </main>
   );

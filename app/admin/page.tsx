@@ -23,7 +23,16 @@ export default function AdminPage() {
   async function loadTechnicians() {
     try {
       setLoadingTechs(true);
+
       const res = await fetch("/api/admin/list-technicians");
+      const contentType = res.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        console.error("Non-JSON response from list-technicians:", text);
+        throw new Error("Server returned HTML instead of JSON.");
+      }
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -61,6 +70,14 @@ export default function AdminPage() {
           password,
         }),
       });
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        console.error("Non-JSON response from create-technician:", text);
+        throw new Error("Server returned HTML instead of JSON.");
+      }
 
       const data = await res.json();
 

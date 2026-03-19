@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import UserHeader from "@/components/user-header";
 
 type Technician = {
   id: string;
@@ -41,8 +42,11 @@ export default function AdminPage() {
 
       setTechnicians(data.technicians || []);
     } catch (error) {
+      console.error("loadTechnicians error:", error);
       setMessage(
-        error instanceof Error ? error.message : "Failed to load technicians."
+        error instanceof Error
+          ? `Load technicians error: ${error.message}`
+          : "Failed to load technicians."
       );
     } finally {
       setLoadingTechs(false);
@@ -91,8 +95,11 @@ export default function AdminPage() {
       setPassword("Fox12345!");
       loadTechnicians();
     } catch (error) {
+      console.error("createTechnician error:", error);
       setMessage(
-        error instanceof Error ? error.message : "Something went wrong."
+        error instanceof Error
+          ? `Create technician error: ${error.message}`
+          : "Something went wrong."
       );
     } finally {
       setLoading(false);
@@ -102,6 +109,11 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-5xl space-y-8">
+
+        {/* ✅ HEADER ADDED */}
+        <UserHeader />
+
+        {/* CREATE TECHNICIAN */}
         <div className="rounded-2xl bg-white p-8 text-gray-900 shadow">
           <h1 className="mb-2 text-3xl font-bold text-gray-900">
             Admin Dashboard
@@ -116,6 +128,7 @@ export default function AdminPage() {
               placeholder="Full Name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              required
             />
 
             <input
@@ -124,6 +137,7 @@ export default function AdminPage() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
 
             <input
@@ -132,6 +146,7 @@ export default function AdminPage() {
               placeholder="Starter Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
 
             <button
@@ -150,8 +165,11 @@ export default function AdminPage() {
           )}
         </div>
 
+        {/* TECHNICIAN LIST */}
         <div className="rounded-2xl bg-white p-8 text-gray-900 shadow">
-          <h2 className="mb-4 text-2xl font-bold text-gray-900">Technicians</h2>
+          <h2 className="mb-4 text-2xl font-bold text-gray-900">
+            Technicians
+          </h2>
 
           {loadingTechs ? (
             <p className="text-gray-900">Loading technicians...</p>
@@ -190,6 +208,7 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+
       </div>
     </main>
   );

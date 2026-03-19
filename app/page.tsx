@@ -48,7 +48,15 @@ export default function Home() {
         throw new Error(data.error || "Something went wrong");
       }
 
-      setOutput(data.output);
+      let cleanOutput = data.output;
+
+      try {
+        cleanOutput = decodeURIComponent(data.output);
+      } catch {
+        cleanOutput = data.output;
+      }
+
+      setOutput(cleanOutput);
 
       const supabase = createClient();
       const {
@@ -68,7 +76,7 @@ export default function Home() {
             pestType,
             findings,
             treatment,
-            generatedEmail: data.output,
+            generatedEmail: cleanOutput,
           }),
         });
       }

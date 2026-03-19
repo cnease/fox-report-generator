@@ -9,12 +9,9 @@ type Props = {
 export default function CopyButton({ text }: Props) {
   const [copied, setCopied] = useState(false);
 
-  function getCleanText(value: string) {
+  function cleanText(value: string) {
     try {
-      if (value.includes("%20") || value.includes("%0A") || value.includes("%2")) {
-        return decodeURIComponent(value);
-      }
-      return value;
+      return decodeURIComponent(value);
     } catch {
       return value;
     }
@@ -22,10 +19,8 @@ export default function CopyButton({ text }: Props) {
 
   async function handleCopy() {
     try {
-      const cleanText = getCleanText(text);
-      await navigator.clipboard.writeText(cleanText);
+      await navigator.clipboard.writeText(cleanText(text));
       setCopied(true);
-
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Copy failed:", error);

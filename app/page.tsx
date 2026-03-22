@@ -5,6 +5,23 @@ import UserHeader from "@/components/user-header";
 import { createClient } from "@/lib/supabase/client";
 import CopyButton from "@/components/copy-button";
 
+function cleanGeneratedText(value: string) {
+  try {
+    let cleaned = value;
+
+    if (cleaned.startsWith("mailto:")) {
+      const bodyMatch = cleaned.match(/[?&]body=([^&]*)/i);
+      if (bodyMatch?.[1]) {
+        cleaned = bodyMatch[1];
+      }
+    }
+
+    return decodeURIComponent(cleaned);
+  } catch {
+    return value;
+  }
+}
+
 export default function Home() {
   const [customerName, setCustomerName] = useState("");
   const [serviceAddress, setServiceAddress] = useState("");
@@ -48,14 +65,7 @@ export default function Home() {
         throw new Error(data.error || "Something went wrong");
       }
 
-      let cleanOutput = data.output;
-
-      try {
-        cleanOutput = decodeURIComponent(data.output);
-      } catch {
-        cleanOutput = data.output;
-      }
-
+      const cleanOutput = cleanGeneratedText(data.output);
       setOutput(cleanOutput);
 
       const supabase = createClient();

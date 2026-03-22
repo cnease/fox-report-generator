@@ -1,12 +1,54 @@
 "use client";
 
-export default function CopyButton() {
+import { useState } from "react";
+
+type Props = {
+  text: string;
+};
+
+function cleanCopiedText(value: string) {
+  try {
+    let cleaned = value.trim();
+
+    if (cleaned.toLowerCase().startsWith("mailto:")) {
+      const bodyMatch = cleaned.match(/[?&]body=([^&]*)/i);
+      if (bodyMatch?.[1]) {
+        cleaned = bodyMatch[1];
+      }
+    }
+
+    while (/%[0-9A-Fa-f]{2}/.test(cleaned)) {
+      const decoded = decodeURIComponent(cleaned);
+      if (decoded === cleaned) break;
+      cleaned = decoded;
+    }
+
+    return cleaned;
+  } catch {
+    return value;
+  }
+}
+
+export default function CopyButton({ text }: Props) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      const cleanText = cleanCopiedText(text);
+      await navigator.clipboard.writeText(cleanText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Copy failed:", error);
+    }
+  }
+
   return (
     <button
-      className="rounded bg-red-600 px-3 py-1 text-sm font-bold text-white"
-      onClick={() => alert("NEW COPY BUTTON IS LIVE")}
+      onClick={handleCopy}
+      className="rounded bg-gray-800 px-3 py-1 text-sm text-white hover:bg-gray-900"
     >
-      COPY TEST LIVE
+      {copied ? "Copied!" : "Copy"}
     </button>
   );
 }

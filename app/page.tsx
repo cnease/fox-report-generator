@@ -7,16 +7,22 @@ import CopyButton from "@/components/copy-button";
 
 function cleanGeneratedText(value: string) {
   try {
-    let cleaned = value;
+    let cleaned = value.trim();
 
-    if (cleaned.startsWith("mailto:")) {
+    if (cleaned.toLowerCase().startsWith("mailto:")) {
       const bodyMatch = cleaned.match(/[?&]body=([^&]*)/i);
       if (bodyMatch?.[1]) {
         cleaned = bodyMatch[1];
       }
     }
 
-    return decodeURIComponent(cleaned);
+    while (/%[0-9A-Fa-f]{2}/.test(cleaned)) {
+      const decoded = decodeURIComponent(cleaned);
+      if (decoded === cleaned) break;
+      cleaned = decoded;
+    }
+
+    return cleaned;
   } catch {
     return value;
   }

@@ -5,6 +5,29 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+function cleanGeneratedText(value: string) {
+  try {
+    let cleaned = value.trim();
+
+    if (cleaned.toLowerCase().startsWith("mailto:")) {
+      const bodyMatch = cleaned.match(/[?&]body=([^&]*)/i);
+      if (bodyMatch?.[1]) {
+        cleaned = bodyMatch[1];
+      }
+    }
+
+    while (/%[0-9A-Fa-f]{2}/.test(cleaned)) {
+      const decoded = decodeURIComponent(cleaned);
+      if (decoded === cleaned) break;
+      cleaned = decoded;
+    }
+
+    return cleaned;
+  } catch {
+    return value;
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -52,6 +75,9 @@ Thank you for choosing Fox Pest Control!
 Please consider leaving us a 5-Star Rating if you were happy with today's service.
 
 Use a friendly, professional tone that is easy for homeowners to understand.
+
+Do not URL-encode, percent-encode, or format as a mailto link.
+Return normal readable plain text only.
 `;
 
     const response = await client.responses.create({
@@ -59,10 +85,11 @@ Use a friendly, professional tone that is easy for homeowners to understand.
       input: prompt,
     });
 
-    return NextResponse.json({
-      output: response.output_text,
-    });
+    const cleanOutput = cleanGeneratedText(response.output_text);
 
+    return NextResponse.json({
+      output: cleanOutput,
+    });
   } catch (error) {
     console.error("OpenAI error:", error);
 

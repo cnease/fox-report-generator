@@ -176,9 +176,11 @@ export default function Home() {
               <CopyButton text={output} />
             </div>
 
-            <pre className="whitespace-pre-wrap rounded-lg bg-gray-100 p-4 text-sm text-gray-900">
-              {output}
-            </pre>
+            <textarea
+              readOnly
+              value={output}
+              className="min-h-[250px] w-full rounded-lg bg-gray-100 p-4 text-sm text-gray-900"
+            />
           </div>
         )}
       </div>

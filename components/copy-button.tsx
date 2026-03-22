@@ -29,18 +29,51 @@ function cleanCopiedText(value: string) {
   }
 }
 
+function copyWithTextareaFallback(text: string) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.top = "-9999px";
+  textArea.style.left = "-9999px";
+  textArea.style.opacity = "0";
+  document.body.appendChild(textArea);
+
+  textArea.focus();
+  textArea.select();
+  textArea.setSelectionRange(0, text.length);
+
+  const successful = document.execCommand("copy");
+  document.body.removeChild(textArea);
+
+  if (!successful) {
+    throw new Error("Fallback copy failed.");
+  }
+}
+
 export default function CopyButton({ text }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
+    const cleanText = cleanCopiedText(text);
+
     try {
-      const cleanText = cleanCopiedText(text);
-      await navigator.clipboard.writeText(cleanText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Copy failed:", error);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(cleanText);
+      } else {
+        copyWithTextareaFallback(cleanText);
+      }
+    } catch {
+      try {
+        copyWithTextareaFallback(cleanText);
+      } catch (error) {
+        console.error("Copy failed:", error);
+        return;
+      }
     }
+
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (

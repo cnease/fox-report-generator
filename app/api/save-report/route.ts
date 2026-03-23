@@ -8,6 +8,8 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
+
     const {
       userId,
       customerName,
@@ -15,9 +17,12 @@ export async function POST(req: Request) {
       pestType,
       findings,
       treatment,
+      notes,
       generatedEmail,
-    } = await req.json();
+      imageUrls,
+    } = body;
 
+    // ✅ Basic validation
     if (!userId || !customerName || !serviceAddress || !generatedEmail) {
       return NextResponse.json(
         { error: "Missing required report fields." },
@@ -25,6 +30,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ Insert into Supabase
     const { error } = await supabaseAdmin.from("reports").insert({
       user_id: userId,
       customer_name: customerName,
@@ -32,10 +38,13 @@ export async function POST(req: Request) {
       pest_type: pestType,
       findings,
       treatment,
+      notes,
       generated_email: generatedEmail,
+      image_urls: Array.isArray(imageUrls) ? imageUrls : [],
     });
 
     if (error) {
+      console.error("Supabase insert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

@@ -5,10 +5,10 @@ import UserHeader from "@/components/user-header";
 import { createClient } from "@/lib/supabase/client";
 import CopyButton from "@/components/copy-button";
 
-type ImagePayload = {
+type UploadedImage = {
   name: string;
   type: string;
-  dataUrl: string;
+  publicUrl: string;
 };
 
 export default function Home() {
@@ -18,43 +18,55 @@ export default function Home() {
   const [findings, setFindings] = useState("");
   const [treatment, setTreatment] = useState("");
   const [notes, setNotes] = useState("");
-  const [images, setImages] = useState<ImagePayload[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>([]);
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function fileToDataUrl(file: File): Promise<ImagePayload> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        resolve({
-          name: file.name,
-          type: file.type,
-          dataUrl: reader.result as string,
-        });
-      };
-
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files || []).slice(0, 3);
 
     if (files.length === 0) {
       setImages([]);
       return;
     }
 
-    const limitedFiles = files.slice(0, 3);
-
     try {
-      const converted = await Promise.all(limitedFiles.map(fileToDataUrl));
-      setImages(converted);
+      const supabase = createClient();
+      const uploaded: UploadedImage[] = [];
+
+      for (const file of files) {
+        const filePath = `reports/${Date.now()}-${file.name}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("report-images")
+          .upload(filePath, file, {
+            contentType: file.type,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(uploadError.message);
+        }
+
+        const { data } = supabase.storage
+          .from("report-images")
+          .getPublicUrl(filePath);
+
+        uploaded.push({
+          name: file.name,
+          type: file.type,
+          publicUrl: data.publicUrl,
+        });
+      }
+
+      setImages(uploaded);
     } catch (error) {
-      console.error("Image conversion error:", error);
-      alert("There was a problem reading one or more images.");
+      console.error("Image upload error:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "There was a problem uploading one or more images."
+      );
     }
   }
 
@@ -116,6 +128,7 @@ export default function Home() {
             treatment,
             notes,
             generatedEmail: data.output,
+            imageUrls: images.map((image) => image.publicUrl),
           }),
         });
       }
@@ -124,7 +137,7 @@ export default function Home() {
       setOutput(
         error instanceof Error
           ? error.message
-          : "There was an error generating the email."
+          : "There was an error generating the summary."
       );
     } finally {
       setLoading(false);
@@ -202,7 +215,7 @@ export default function Home() {
             />
             {images.length > 0 && (
               <p className="mt-2 text-sm text-gray-600">
-                {images.length} image(s) selected
+                {images.length} image(s) uploaded
               </p>
             )}
           </div>

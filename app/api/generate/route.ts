@@ -1,20 +1,14 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 type UploadedImage = {
   name: string;
   type: string;
-  dataUrl: string;
+  publicUrl: string;
 };
 
 type VisualFinding = {
@@ -69,7 +63,6 @@ export async function POST(req: Request) {
     } = body;
 
     let visualFindings: VisualFinding[] = [];
-    const uploadedImageUrls: string[] = [];
 
     if (Array.isArray(images) && images.length > 0) {
       const imageAnalysisInput: Array<
@@ -111,62 +104,38 @@ If nothing relevant is clearly visible, return:
       ];
 
       for (const image of images) {
-        const base64Data = image.dataUrl.split(",")[1];
-        const buffer = Buffer.from(base64Data, "base64");
-        const filePath = `reports/${Date.now()}-${image.name}`;
-
-        const { error } = await supabase.storage
-          .from("report-images")
-          .upload(filePath, buffer, {
-            contentType: image.type,
-            upsert: false,
-          });
-
-        if (error) {
-          console.error("Image upload failed:", error.message);
-          continue;
-        }
-
-        const { data } = supabase.storage
-          .from("report-images")
-          .getPublicUrl(filePath);
-
-        uploadedImageUrls.push(data.publicUrl);
-
         imageAnalysisInput.push({
           type: "input_image",
-          image_url: data.publicUrl,
+          image_url: image.publicUrl,
           detail: "auto",
         });
       }
 
-      if (imageAnalysisInput.length > 1) {
-        const imageResponse = await client.responses.create({
-          model: "gpt-4.1-mini",
-          input: [
-            {
-              role: "user",
-              content: imageAnalysisInput,
-            },
-          ],
-        });
+      const imageResponse = await client.responses.create({
+        model: "gpt-4.1-mini",
+        input: [
+          {
+            role: "user",
+            content: imageAnalysisInput,
+          },
+        ],
+      });
 
-        const rawVisualOutput = imageResponse.output_text?.trim() || "";
+      const rawVisualOutput = imageResponse.output_text?.trim() || "";
 
-        try {
-          const parsed = JSON.parse(rawVisualOutput);
-          visualFindings = Array.isArray(parsed.visual_findings)
-            ? parsed.visual_findings.filter(
-                (item: VisualFinding) =>
-                  item?.clearly_visible === true &&
-                  typeof item?.finding === "string"
-              )
-            : [];
-        } catch (parseError) {
-          console.error("Visual findings JSON parse error:", parseError);
-          console.error("Raw visual output:", rawVisualOutput);
-          visualFindings = [];
-        }
+      try {
+        const parsed = JSON.parse(rawVisualOutput);
+        visualFindings = Array.isArray(parsed.visual_findings)
+          ? parsed.visual_findings.filter(
+              (item: VisualFinding) =>
+                item?.clearly_visible === true &&
+                typeof item?.finding === "string"
+            )
+          : [];
+      } catch (parseError) {
+        console.error("Visual findings JSON parse error:", parseError);
+        console.error("Raw visual output:", rawVisualOutput);
+        visualFindings = [];
       }
     }
 
@@ -238,7 +207,7 @@ Return normal readable plain text only.
     return NextResponse.json({
       output: cleanOutput,
       visualFindings,
-      imageUrls: uploadedImageUrls,
+      imageUrls: images.map((image) => image.publicUrl),
     });
   } catch (error) {
     console.error("OpenAI error:", error);

@@ -206,17 +206,61 @@ export default function Home() {
             <label className="mb-2 block text-sm font-medium text-gray-900">
               Upload Photos (up to 3)
             </label>
-            <input
-              className="block w-full text-sm text-gray-900"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-            />
+
+            <label className="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:bg-gray-100">
+              <input
+                className="hidden"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
+              />
+
+              <div className="space-y-2">
+                <p className="text-base font-semibold text-gray-900">
+                  {images.length > 0
+                    ? "Tap to replace uploaded photos"
+                    : "Tap here to upload photos"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Upload clear images of pest activity, conducive conditions, or treatment areas
+                </p>
+                <p className="text-xs text-gray-500">
+                  JPG, PNG, HEIC • Up to 3 images
+                </p>
+              </div>
+            </label>
+
             {images.length > 0 && (
-              <p className="mt-2 text-sm text-gray-600">
-                {images.length} image(s) uploaded
-              </p>
+              <div className="mt-3 rounded bg-gray-100 p-3">
+                <p className="text-sm font-medium text-gray-900">
+                  {images.length} image(s) uploaded
+                </p>
+
+                <ul className="mt-2 space-y-1 text-sm text-gray-700">
+                  {images.map((image, index) => (
+                    <li key={`${image.name}-${index}`}>• {image.name}</li>
+                  ))}
+                </ul>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {images.map((image, index) => (
+                    <div
+                      key={`${image.publicUrl}-${index}`}
+                      className="overflow-hidden rounded-lg border bg-white"
+                    >
+                      <img
+                        src={image.publicUrl}
+                        alt={image.name}
+                        className="h-28 w-full object-cover"
+                      />
+                      <div className="truncate p-2 text-xs text-gray-600">
+                        {image.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

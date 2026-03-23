@@ -5,28 +5,11 @@ import UserHeader from "@/components/user-header";
 import { createClient } from "@/lib/supabase/client";
 import CopyButton from "@/components/copy-button";
 
-function cleanGeneratedText(value: string) {
-  try {
-    let cleaned = value.trim();
-
-    if (cleaned.toLowerCase().startsWith("mailto:")) {
-      const bodyMatch = cleaned.match(/[?&]body=([^&]*)/i);
-      if (bodyMatch?.[1]) {
-        cleaned = bodyMatch[1];
-      }
-    }
-
-    while (/%[0-9A-Fa-f]{2}/.test(cleaned)) {
-      const decoded = decodeURIComponent(cleaned);
-      if (decoded === cleaned) break;
-      cleaned = decoded;
-    }
-
-    return cleaned;
-  } catch {
-    return value;
-  }
-}
+type ImagePayload = {
+  name: string;
+  type: string;
+  dataUrl: string;
+};
 
 export default function Home() {
   const [customerName, setCustomerName] = useState("");
@@ -34,8 +17,46 @@ export default function Home() {
   const [pestType, setPestType] = useState("");
   const [findings, setFindings] = useState("");
   const [treatment, setTreatment] = useState("");
+  const [notes, setNotes] = useState("");
+  const [images, setImages] = useState<ImagePayload[]>([]);
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  async function fileToDataUrl(file: File): Promise<ImagePayload> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        resolve({
+          name: file.name,
+          type: file.type,
+          dataUrl: reader.result as string,
+        });
+      };
+
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+
+    if (files.length === 0) {
+      setImages([]);
+      return;
+    }
+
+    const limitedFiles = files.slice(0, 3);
+
+    try {
+      const converted = await Promise.all(limitedFiles.map(fileToDataUrl));
+      setImages(converted);
+    } catch (error) {
+      console.error("Image conversion error:", error);
+      alert("There was a problem reading one or more images.");
+    }
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,6 +75,8 @@ export default function Home() {
           pestType,
           findings,
           treatment,
+          notes,
+          images,
         }),
       });
 
@@ -71,8 +94,7 @@ export default function Home() {
         throw new Error(data.error || "Something went wrong");
       }
 
-      const cleanOutput = cleanGeneratedText(data.output);
-      setOutput(cleanOutput);
+      setOutput(data.output);
 
       const supabase = createClient();
       const {
@@ -92,7 +114,8 @@ export default function Home() {
             pestType,
             findings,
             treatment,
-            generatedEmail: cleanOutput,
+            notes,
+            generatedEmail: data.output,
           }),
         });
       }
@@ -117,7 +140,7 @@ export default function Home() {
           Fox Pest Control Report Generator
         </h1>
         <p className="mb-6 text-gray-700">
-          Enter inspection details and generate a standardized customer email.
+          Enter inspection details, notes, and photos to generate a standardized customer summary.
         </p>
 
         <form onSubmit={handleSubmit} className="grid gap-4">
@@ -158,12 +181,38 @@ export default function Home() {
             onChange={(e) => setTreatment(e.target.value)}
           />
 
+          <textarea
+            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+            placeholder="Technician Notes"
+            rows={4}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+
+          <div className="rounded border bg-white p-3">
+            <label className="mb-2 block text-sm font-medium text-gray-900">
+              Upload Photos (up to 3)
+            </label>
+            <input
+              className="block w-full text-sm text-gray-900"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+            />
+            {images.length > 0 && (
+              <p className="mt-2 text-sm text-gray-600">
+                {images.length} image(s) selected
+              </p>
+            )}
+          </div>
+
           <button
             type="submit"
             disabled={loading}
             className="rounded bg-green-600 p-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
           >
-            {loading ? "Generating..." : "Generate Email"}
+            {loading ? "Generating..." : "Generate Summary"}
           </button>
         </form>
 
@@ -171,16 +220,14 @@ export default function Home() {
           <div className="mt-8">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                Generated Email
+                Generated Summary
               </h2>
               <CopyButton text={output} />
             </div>
 
-            <textarea
-              readOnly
-              value={output}
-              className="min-h-[250px] w-full rounded-lg bg-gray-100 p-4 text-sm text-gray-900"
-            />
+            <pre className="whitespace-pre-wrap rounded-lg bg-gray-100 p-4 text-sm text-gray-900">
+              {output}
+            </pre>
           </div>
         )}
       </div>

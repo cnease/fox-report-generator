@@ -1,9 +1,27 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+type UploadedImage = {
+  name: string;
+  type: string;
+  dataUrl: string;
+};
+
+type VisualFinding = {
+  finding: string;
+  category: "conducive_condition" | "pest_evidence" | "other";
+  clearly_visible: boolean;
+};
 
 function cleanGeneratedText(value: string) {
   try {
@@ -38,7 +56,124 @@ export async function POST(req: Request) {
       pestType,
       findings,
       treatment,
+      notes,
+      images = [],
+    }: {
+      customerName: string;
+      serviceAddress: string;
+      pestType: string;
+      findings: string;
+      treatment: string;
+      notes: string;
+      images: UploadedImage[];
     } = body;
+
+    let visualFindings: VisualFinding[] = [];
+    const uploadedImageUrls: string[] = [];
+
+    if (Array.isArray(images) && images.length > 0) {
+      const imageAnalysisInput: Array<
+        | { type: "input_text"; text: string }
+        | { type: "input_image"; image_url: string; detail: "auto" }
+      > = [
+        {
+          type: "input_text",
+          text: `
+You are analyzing technician-uploaded pest control photos.
+
+Your job:
+- identify ONLY clearly visible conducive conditions or clearly visible pest-related findings
+- do NOT infer hidden problems
+- do NOT guess
+- do NOT repeat technician notes
+- if no relevant issue is clearly visible, return an empty findings array
+
+Return ONLY valid JSON in this exact format:
+{
+  "visual_findings": [
+    {
+      "finding": "short description",
+      "category": "conducive_condition",
+      "clearly_visible": true
+    }
+  ]
+}
+
+Allowed category values:
+- conducive_condition
+- pest_evidence
+- other
+
+If nothing relevant is clearly visible, return:
+{ "visual_findings": [] }
+          `.trim(),
+        },
+      ];
+
+      for (const image of images) {
+        const base64Data = image.dataUrl.split(",")[1];
+        const buffer = Buffer.from(base64Data, "base64");
+        const filePath = `reports/${Date.now()}-${image.name}`;
+
+        const { error } = await supabase.storage
+          .from("report-images")
+          .upload(filePath, buffer, {
+            contentType: image.type,
+            upsert: false,
+          });
+
+        if (error) {
+          console.error("Image upload failed:", error.message);
+          continue;
+        }
+
+        const { data } = supabase.storage
+          .from("report-images")
+          .getPublicUrl(filePath);
+
+        uploadedImageUrls.push(data.publicUrl);
+
+        imageAnalysisInput.push({
+          type: "input_image",
+          image_url: data.publicUrl,
+          detail: "auto",
+        });
+      }
+
+      if (imageAnalysisInput.length > 1) {
+        const imageResponse = await client.responses.create({
+          model: "gpt-4.1-mini",
+          input: [
+            {
+              role: "user",
+              content: imageAnalysisInput,
+            },
+          ],
+        });
+
+        const rawVisualOutput = imageResponse.output_text?.trim() || "";
+
+        try {
+          const parsed = JSON.parse(rawVisualOutput);
+          visualFindings = Array.isArray(parsed.visual_findings)
+            ? parsed.visual_findings.filter(
+                (item: VisualFinding) =>
+                  item?.clearly_visible === true &&
+                  typeof item?.finding === "string"
+              )
+            : [];
+        } catch (parseError) {
+          console.error("Visual findings JSON parse error:", parseError);
+          console.error("Raw visual output:", rawVisualOutput);
+          visualFindings = [];
+        }
+      }
+    }
+
+    const visualFindingText =
+      visualFindings.length > 0
+        ? visualFindings.map((item) => `- ${item.finding}`).join("\n")
+        : "None";
 
     const prompt = `
 Write a professional Fox Pest Control technician service summary email.
@@ -48,8 +183,21 @@ Use the following information:
 Customer Name: ${customerName}
 Service Address: ${serviceAddress}
 Pest Type: ${pestType}
-Inspection Findings: ${findings}
-Treatment Performed: ${treatment}
+Inspection Findings: ${findings || "None provided"}
+Treatment Performed: ${treatment || "None provided"}
+Technician Notes: ${notes || "None provided"}
+
+Validated Additional Findings:
+${visualFindingText}
+
+Rules:
+- Use the technician's written findings, treatment, and notes as the main source.
+- Use the validated additional findings ONLY if they are listed above.
+- If "Validated Additional Findings" is "None", do not add any image-based findings.
+- Do NOT mention photos, images, uploads, or visual analysis.
+- Do NOT say "based on the pictures" or anything similar.
+- If the images do not clearly show a conducive condition, do not include one.
+- Write naturally as part of the service summary.
 
 Format the email exactly using these sections:
 
@@ -78,7 +226,7 @@ Use a friendly, professional tone that is easy for homeowners to understand.
 
 Do not URL-encode, percent-encode, or format as a mailto link.
 Return normal readable plain text only.
-`;
+    `.trim();
 
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
@@ -89,12 +237,14 @@ Return normal readable plain text only.
 
     return NextResponse.json({
       output: cleanOutput,
+      visualFindings,
+      imageUrls: uploadedImageUrls,
     });
   } catch (error) {
     console.error("OpenAI error:", error);
 
     return NextResponse.json(
-      { error: "Failed to generate email." },
+      { error: "Failed to generate summary." },
       { status: 500 }
     );
   }

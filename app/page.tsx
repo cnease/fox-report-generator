@@ -22,6 +22,20 @@ export default function Home() {
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function handleReset() {
+    const confirmReset = confirm("Clear all inputs and uploaded photos?");
+    if (!confirmReset) return;
+
+    setCustomerName("");
+    setServiceAddress("");
+    setPestType("");
+    setFindings("");
+    setTreatment("");
+    setNotes("");
+    setImages([]);
+    setOutput("");
+  }
+
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []).slice(0, 3);
 
@@ -264,13 +278,23 @@ export default function Home() {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded bg-green-600 p-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading ? "Generating..." : "Generate Summary"}
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 rounded bg-green-600 p-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              {loading ? "Generating..." : "Generate Summary"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex-1 rounded bg-gray-200 p-3 font-semibold text-gray-900 hover:bg-gray-300"
+            >
+              Reset Form
+            </button>
+          </div>
         </form>
 
         {output && (

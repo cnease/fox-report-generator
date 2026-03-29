@@ -21,6 +21,7 @@ export async function GET() {
         notes,
         generated_email,
         image_urls,
+        visual_findings_json,
         created_at
       `)
       .order("created_at", { ascending: false });

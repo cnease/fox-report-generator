@@ -5,6 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import UserHeader from "@/components/user-header";
 import { createClient } from "@/lib/supabase/client";
 
+type VisualFinding = {
+  finding: string;
+  category: string;
+  clearly_visible: boolean;
+};
+
 type Report = {
   id: string;
   customer_name: string;
@@ -15,6 +21,7 @@ type Report = {
   notes: string | null;
   generated_email: string | null;
   image_urls: string[] | null;
+  visual_findings_json: VisualFinding[] | null;
   created_at: string;
 };
 
@@ -32,7 +39,7 @@ export default function ReportsPage() {
         const { data, error } = await supabase
           .from("reports")
           .select(
-            "id, customer_name, service_address, pest_type, findings, treatment, notes, generated_email, image_urls, created_at"
+            "id, customer_name, service_address, pest_type, findings, treatment, notes, generated_email, image_urls, visual_findings_json, created_at"
           )
           .order("created_at", { ascending: false });
 
@@ -141,9 +148,27 @@ export default function ReportsPage() {
                 </p>
               </div>
 
+              {report.visual_findings_json &&
+                report.visual_findings_json.length > 0 && (
+                  <div className="mb-4 rounded-lg bg-blue-50 p-4">
+                    <h3 className="mb-2 font-semibold text-gray-900">
+                      AI-Detected Visual Findings
+                    </h3>
+                    <ul className="space-y-1 text-sm text-gray-700">
+                      {report.visual_findings_json.map((item, index) => (
+                        <li key={`${item.finding}-${index}`}>
+                          • {item.finding}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
               {report.image_urls && report.image_urls.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="mb-2 font-semibold text-gray-900">Uploaded Photos</h3>
+                  <h3 className="mb-2 font-semibold text-gray-900">
+                    Uploaded Photos
+                  </h3>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {report.image_urls.map((url, index) => (
                       <a
@@ -166,7 +191,9 @@ export default function ReportsPage() {
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">Generated Email</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    Generated Email
+                  </h3>
                   <CopyButton text={report.generated_email || ""} />
                 </div>
 

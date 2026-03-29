@@ -5,6 +5,12 @@ import Link from "next/link";
 import UserHeader from "@/components/user-header";
 import CopyButton from "@/components/copy-button";
 
+type VisualFinding = {
+  finding: string;
+  category: string;
+  clearly_visible: boolean;
+};
+
 type Report = {
   id: string;
   user_id: string;
@@ -18,6 +24,7 @@ type Report = {
   notes: string | null;
   generated_email: string | null;
   image_urls: string[] | null;
+  visual_findings_json: VisualFinding[] | null;
   created_at: string;
 };
 
@@ -26,6 +33,8 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [technicianFilter, setTechnicianFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   useEffect(() => {
     async function loadAllReports() {
@@ -50,21 +59,38 @@ export default function AdminReportsPage() {
     loadAllReports();
   }, []);
 
+  const technicianOptions = useMemo(() => {
+    const names = reports
+      .map((report) => report.technician_name || report.technician_email || "")
+      .filter(Boolean);
+
+    return [...new Set(names)].sort();
+  }, [reports]);
+
   const filteredReports = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    if (!term) return reports;
-
     return reports.filter((report) => {
-      return (
+      const matchesSearch =
+        !term ||
         report.customer_name.toLowerCase().includes(term) ||
         report.service_address.toLowerCase().includes(term) ||
         (report.pest_type || "").toLowerCase().includes(term) ||
         (report.technician_name || "").toLowerCase().includes(term) ||
-        (report.technician_email || "").toLowerCase().includes(term)
-      );
+        (report.technician_email || "").toLowerCase().includes(term);
+
+      const technicianNameOrEmail =
+        report.technician_name || report.technician_email || "";
+
+      const matchesTechnician =
+        !technicianFilter || technicianNameOrEmail === technicianFilter;
+
+      const reportDate = new Date(report.created_at).toISOString().slice(0, 10);
+      const matchesDate = !dateFilter || reportDate === dateFilter;
+
+      return matchesSearch && matchesTechnician && matchesDate;
     });
-  }, [reports, search]);
+  }, [reports, search, technicianFilter, dateFilter]);
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
@@ -89,13 +115,33 @@ export default function AdminReportsPage() {
           </Link>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 grid gap-3 md:grid-cols-3">
           <input
-            className="w-full rounded-lg border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+            className="rounded-lg border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             type="text"
             placeholder="Search by customer, address, pest type, technician name, or technician email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            className="rounded-lg border bg-white p-3 text-gray-900"
+            value={technicianFilter}
+            onChange={(e) => setTechnicianFilter(e.target.value)}
+          >
+            <option value="">All Technicians</option>
+            {technicianOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+
+          <input
+            className="rounded-lg border bg-white p-3 text-gray-900"
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
           />
         </div>
 
@@ -159,9 +205,27 @@ export default function AdminReportsPage() {
                 </p>
               </div>
 
+              {report.visual_findings_json &&
+                report.visual_findings_json.length > 0 && (
+                  <div className="mb-4 rounded-lg bg-blue-50 p-4">
+                    <h3 className="mb-2 font-semibold text-gray-900">
+                      AI-Detected Visual Findings
+                    </h3>
+                    <ul className="space-y-1 text-sm text-gray-700">
+                      {report.visual_findings_json.map((item, index) => (
+                        <li key={`${item.finding}-${index}`}>
+                          • {item.finding}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
               {report.image_urls && report.image_urls.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="mb-2 font-semibold text-gray-900">Uploaded Photos</h3>
+                  <h3 className="mb-2 font-semibold text-gray-900">
+                    Uploaded Photos
+                  </h3>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {report.image_urls.map((url, index) => (
                       <a

@@ -18,6 +18,7 @@ export async function POST(req: Request) {
       notes,
       generatedEmail,
       imageUrls,
+      visualFindings,
     } = await req.json();
 
     if (!userId || !customerName || !serviceAddress || !generatedEmail) {
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
       notes,
       generated_email: generatedEmail,
       image_urls: imageUrls || [],
+      visual_findings_json: visualFindings || [],
     });
 
     if (error) {

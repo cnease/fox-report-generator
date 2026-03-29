@@ -18,7 +18,9 @@ export async function GET() {
         pest_type,
         findings,
         treatment,
+        notes,
         generated_email,
+        image_urls,
         created_at
       `)
       .order("created_at", { ascending: false });

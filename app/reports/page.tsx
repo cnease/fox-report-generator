@@ -12,7 +12,9 @@ type Report = {
   pest_type: string | null;
   findings: string | null;
   treatment: string | null;
+  notes: string | null;
   generated_email: string | null;
+  image_urls: string[] | null;
   created_at: string;
 };
 
@@ -30,7 +32,7 @@ export default function ReportsPage() {
         const { data, error } = await supabase
           .from("reports")
           .select(
-            "id, customer_name, service_address, pest_type, findings, treatment, generated_email, created_at"
+            "id, customer_name, service_address, pest_type, findings, treatment, notes, generated_email, image_urls, created_at"
           )
           .order("created_at", { ascending: false });
 
@@ -133,7 +135,34 @@ export default function ReportsPage() {
                   <span className="font-semibold">Treatment:</span>{" "}
                   {report.treatment || "-"}
                 </p>
+                <p>
+                  <span className="font-semibold">Notes:</span>{" "}
+                  {report.notes || "-"}
+                </p>
               </div>
+
+              {report.image_urls && report.image_urls.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="mb-2 font-semibold text-gray-900">Uploaded Photos</h3>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {report.image_urls.map((url, index) => (
+                      <a
+                        key={`${url}-${index}`}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="overflow-hidden rounded-lg border bg-white"
+                      >
+                        <img
+                          src={url}
+                          alt={`Report photo ${index + 1}`}
+                          className="h-28 w-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="mb-2 flex items-center justify-between">

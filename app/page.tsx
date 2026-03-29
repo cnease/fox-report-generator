@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import UserHeader from "@/components/user-header";
 import { createClient } from "@/lib/supabase/client";
 import CopyButton from "@/components/copy-button";
@@ -9,6 +9,7 @@ type UploadedImage = {
   name: string;
   type: string;
   publicUrl: string;
+  path: string;
 };
 
 export default function Home() {
@@ -21,6 +22,10 @@ export default function Home() {
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const addPhotosInputRef = useRef<HTMLInputElement | null>(null);
+  const replacePhotoInputRef = useRef<HTMLInputElement | null>(null);
+  const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
 
   function handleReset() {
     const confirmReset = confirm("Clear all inputs and uploaded photos?");
@@ -36,44 +41,61 @@ export default function Home() {
     setOutput("");
   }
 
-  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []).slice(0, 3);
+  async function uploadFile(file: File): Promise<UploadedImage> {
+    const supabase = createClient();
+    const filePath = `reports/${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}-${file.name}`;
 
-    if (files.length === 0) {
-      setImages([]);
+    const { error: uploadError } = await supabase.storage
+      .from("report-images")
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    const { data } = supabase.storage
+      .from("report-images")
+      .getPublicUrl(filePath);
+
+    return {
+      name: file.name,
+      type: file.type,
+      publicUrl: data.publicUrl,
+      path: filePath,
+    };
+  }
+
+  async function deleteImageFromStorage(path: string) {
+    try {
+      const supabase = createClient();
+      await supabase.storage.from("report-images").remove([path]);
+    } catch (error) {
+      console.error("Image delete error:", error);
+    }
+  }
+
+  async function handleAddImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const remainingSlots = 3 - images.length;
+
+    if (remainingSlots <= 0) {
+      alert("You can upload up to 3 images.");
+      e.target.value = "";
       return;
     }
 
+    const filesToUpload = files.slice(0, remainingSlots);
+
     try {
-      const supabase = createClient();
-      const uploaded: UploadedImage[] = [];
-
-      for (const file of files) {
-        const filePath = `reports/${Date.now()}-${file.name}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("report-images")
-          .upload(filePath, file, {
-            contentType: file.type,
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw new Error(uploadError.message);
-        }
-
-        const { data } = supabase.storage
-          .from("report-images")
-          .getPublicUrl(filePath);
-
-        uploaded.push({
-          name: file.name,
-          type: file.type,
-          publicUrl: data.publicUrl,
-        });
-      }
-
-      setImages(uploaded);
+      const uploaded = await Promise.all(filesToUpload.map(uploadFile));
+      setImages((prev) => [...prev, ...uploaded]);
     } catch (error) {
       console.error("Image upload error:", error);
       alert(
@@ -81,6 +103,59 @@ export default function Home() {
           ? error.message
           : "There was a problem uploading one or more images."
       );
+    } finally {
+      e.target.value = "";
+    }
+  }
+
+  async function handleRemoveImage(index: number) {
+    const imageToRemove = images[index];
+    if (!imageToRemove) return;
+
+    const confirmRemove = confirm(`Remove photo "${imageToRemove.name}"?`);
+    if (!confirmRemove) return;
+
+    await deleteImageFromStorage(imageToRemove.path);
+
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleStartReplace(index: number) {
+    setReplaceIndex(index);
+    replacePhotoInputRef.current?.click();
+  }
+
+  async function handleReplaceImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || replaceIndex === null) {
+      e.target.value = "";
+      return;
+    }
+
+    const oldImage = images[replaceIndex];
+    if (!oldImage) {
+      e.target.value = "";
+      setReplaceIndex(null);
+      return;
+    }
+
+    try {
+      const newImage = await uploadFile(file);
+      await deleteImageFromStorage(oldImage.path);
+
+      setImages((prev) =>
+        prev.map((img, i) => (i === replaceIndex ? newImage : img))
+      );
+    } catch (error) {
+      console.error("Image replace error:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "There was a problem replacing the image."
+      );
+    } finally {
+      e.target.value = "";
+      setReplaceIndex(null);
     }
   }
 
@@ -223,17 +298,20 @@ export default function Home() {
 
             <label className="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:bg-gray-100">
               <input
+                ref={addPhotosInputRef}
                 className="hidden"
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={handleImageChange}
+                onChange={handleAddImages}
               />
 
               <div className="space-y-2">
                 <p className="text-base font-semibold text-gray-900">
                   {images.length > 0
-                    ? "Tap to replace uploaded photos"
+                    ? images.length < 3
+                      ? "Tap here to add more photos"
+                      : "Maximum of 3 photos uploaded"
                     : "Tap here to upload photos"}
                 </p>
                 <p className="text-sm text-gray-600">
@@ -244,6 +322,14 @@ export default function Home() {
                 </p>
               </div>
             </label>
+
+            <input
+              ref={replacePhotoInputRef}
+              className="hidden"
+              type="file"
+              accept="image/*"
+              onChange={handleReplaceImage}
+            />
 
             {images.length > 0 && (
               <div className="mt-3 rounded bg-gray-100 p-3">
@@ -257,7 +343,7 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {images.map((image, index) => (
                     <div
                       key={`${image.publicUrl}-${index}`}
@@ -266,10 +352,30 @@ export default function Home() {
                       <img
                         src={image.publicUrl}
                         alt={image.name}
-                        className="h-28 w-full object-cover"
+                        className="h-32 w-full object-cover"
                       />
-                      <div className="truncate p-2 text-xs text-gray-600">
-                        {image.name}
+                      <div className="p-2">
+                        <div className="truncate text-xs text-gray-600">
+                          {image.name}
+                        </div>
+
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleStartReplace(index)}
+                            className="flex-1 rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white"
+                          >
+                            Replace
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            className="flex-1 rounded bg-red-100 px-3 py-2 text-xs font-medium text-red-700"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -32,16 +32,17 @@ export async function POST(req: Request) {
       user_id: userId,
       customer_name: customerName,
       service_address: serviceAddress,
-      pest_type: pestType,
-      findings,
-      treatment,
-      notes,
+      pest_type: pestType || null,
+      findings: findings || null,
+      treatment: treatment || null,
+      notes: notes || null,
       generated_email: generatedEmail,
-      image_urls: imageUrls || [],
-      visual_findings_json: visualFindings || [],
+      image_urls: Array.isArray(imageUrls) ? imageUrls : [],
+      visual_findings_json: Array.isArray(visualFindings) ? visualFindings : [],
     });
 
     if (error) {
+      console.error("Supabase insert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

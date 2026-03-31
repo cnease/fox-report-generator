@@ -12,6 +12,16 @@ type UploadedImage = {
   path: string;
 };
 
+type FinalReport = {
+  subject: string;
+  greeting: string;
+  whatISaw: string;
+  whatIDid: string;
+  whatToExpect: string;
+  whatIRecommend: string;
+  closing: string;
+};
+
 export default function Home() {
   const [customerName, setCustomerName] = useState("");
   const [serviceAddress, setServiceAddress] = useState("");
@@ -20,6 +30,7 @@ export default function Home() {
   const [treatment, setTreatment] = useState("");
   const [notes, setNotes] = useState("");
   const [images, setImages] = useState<UploadedImage[]>([]);
+  const [report, setReport] = useState<FinalReport | null>(null);
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -38,6 +49,7 @@ export default function Home() {
     setTreatment("");
     setNotes("");
     setImages([]);
+    setReport(null);
     setOutput("");
   }
 
@@ -116,7 +128,6 @@ export default function Home() {
     if (!confirmRemove) return;
 
     await deleteImageFromStorage(imageToRemove.path);
-
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
@@ -163,6 +174,7 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
     setOutput("");
+    setReport(null);
 
     try {
       const res = await fetch("/api/generate", {
@@ -195,7 +207,8 @@ export default function Home() {
         throw new Error(data.error || "Something went wrong");
       }
 
-      setOutput(data.output);
+      setReport(data.report);
+      setOutput(data.output || "");
 
       const supabase = createClient();
       const {
@@ -220,135 +233,18 @@ export default function Home() {
             imageUrls: images.map((image) => image.publicUrl),
             visualFindings: data.visualFindings || [],
           }),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
-          body: JSON.stringify({
-  userId: user.id,
-  customerName,
-  serviceAddress,
-  pestType,
-  findings,
-  treatment,
-  notes,
-  generatedEmail: data.output,
-  imageUrls: images.map((image) => image.publicUrl),
-  visualFindings: data.visualFindings || [],
-}),
         });
       }
     } catch (error) {
       console.error(error);
-      setOutput(
+
+      const message =
         error instanceof Error
           ? error.message
-          : "There was an error generating the summary."
-      );
+          : "There was an error generating the summary.";
+
+      setOutput(message);
+      setReport(null);
     } finally {
       setLoading(false);
     }
@@ -412,95 +308,79 @@ export default function Home() {
             onChange={(e) => setNotes(e.target.value)}
           />
 
-          <div className="rounded border bg-white p-3">
-            <label className="mb-2 block text-sm font-medium text-gray-900">
-              Upload Photos (up to 3)
-            </label>
-
-            <label className="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:bg-gray-100">
-              <input
-                ref={addPhotosInputRef}
-                className="hidden"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleAddImages}
-              />
-
-              <div className="space-y-2">
-                <p className="text-base font-semibold text-gray-900">
-                  {images.length > 0
-                    ? images.length < 3
-                      ? "Tap here to add more photos"
-                      : "Maximum of 3 photos uploaded"
-                    : "Tap here to upload photos"}
-                </p>
+          <div className="rounded border border-dashed border-gray-300 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-semibold text-gray-900">Photos</h2>
                 <p className="text-sm text-gray-600">
-                  Upload clear images of pest activity, conducive conditions, or treatment areas
-                </p>
-                <p className="text-xs text-gray-500">
-                  JPG, PNG, HEIC • Up to 3 images
+                  Upload up to 3 images. Photos are used internally to support the summary but are not mentioned directly in the final email.
                 </p>
               </div>
-            </label>
+
+              <button
+                type="button"
+                onClick={() => addPhotosInputRef.current?.click()}
+                className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Add Photos
+              </button>
+            </div>
+
+            <input
+              ref={addPhotosInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleAddImages}
+              className="hidden"
+            />
 
             <input
               ref={replacePhotoInputRef}
-              className="hidden"
               type="file"
               accept="image/*"
               onChange={handleReplaceImage}
+              className="hidden"
             />
 
             {images.length > 0 && (
-              <div className="mt-3 rounded bg-gray-100 p-3">
-                <p className="text-sm font-medium text-gray-900">
-                  {images.length} image(s) uploaded
-                </p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {images.map((image, index) => (
+                  <div
+                    key={`${image.path}-${index}`}
+                    className="overflow-hidden rounded-xl border bg-white"
+                  >
+                    <img
+                      src={image.publicUrl}
+                      alt={image.name}
+                      className="h-40 w-full object-cover"
+                    />
 
-                <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                  {images.map((image, index) => (
-                    <li key={`${image.name}-${index}`}>• {image.name}</li>
-                  ))}
-                </ul>
+                    <div className="p-3">
+                      <p className="truncate text-sm font-medium text-gray-900">
+                        {image.name}
+                      </p>
 
-                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {images.map((image, index) => (
-                    <div
-                      key={`${image.publicUrl}-${index}`}
-                      className="overflow-hidden rounded-lg border bg-white"
-                    >
-                      <img
-                        src={image.publicUrl}
-                        alt={image.name}
-                        className="h-32 w-full object-cover"
-                      />
-                      <div className="p-2">
-                        <div className="truncate text-xs text-gray-600">
-                          {image.name}
-                        </div>
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleStartReplace(index)}
+                          className="flex-1 rounded bg-yellow-100 px-3 py-2 text-xs font-medium text-yellow-800"
+                        >
+                          Replace
+                        </button>
 
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleStartReplace(index)}
-                            className="flex-1 rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white"
-                          >
-                            Replace
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(index)}
-                            className="flex-1 rounded bg-red-100 px-3 py-2 text-xs font-medium text-red-700"
-                          >
-                            Remove
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="flex-1 rounded bg-red-100 px-3 py-2 text-xs font-medium text-red-700"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -524,7 +404,52 @@ export default function Home() {
           </div>
         </form>
 
-        {output && (
+        {report && output && (
+          <div className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Generated Summary
+              </h2>
+              <CopyButton text={output} />
+            </div>
+
+            <div className="space-y-4 rounded-lg bg-gray-100 p-4 text-sm text-gray-900">
+              <div>
+                <p className="font-semibold">{report.subject}</p>
+              </div>
+
+              <div>
+                <p>{report.greeting}</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold">WHAT I SAW</h3>
+                <p className="whitespace-pre-wrap">{report.whatISaw}</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold">WHAT I DID</h3>
+                <p className="whitespace-pre-wrap">{report.whatIDid}</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold">WHAT TO EXPECT</h3>
+                <p className="whitespace-pre-wrap">{report.whatToExpect}</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold">WHAT I RECOMMENDED</h3>
+                <p className="whitespace-pre-wrap">{report.whatIRecommend}</p>
+              </div>
+
+              <div>
+                <p className="whitespace-pre-wrap">{report.closing}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!report && output && (
           <div className="mt-8">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">

@@ -17,27 +17,42 @@ type VisualFinding = {
   clearly_visible: boolean;
 };
 
-function cleanGeneratedText(value: string) {
+type FinalReport = {
+  subject: string;
+  greeting: string;
+  whatISaw: string;
+  whatIDid: string;
+  whatToExpect: string;
+  whatIRecommend: string;
+  closing: string;
+};
+
+function safeJsonParse<T>(value: string, fallback: T): T {
   try {
-    let cleaned = value.trim();
-
-    if (cleaned.toLowerCase().startsWith("mailto:")) {
-      const bodyMatch = cleaned.match(/[?&]body=([^&]*)/i);
-      if (bodyMatch?.[1]) {
-        cleaned = bodyMatch[1];
-      }
-    }
-
-    while (/%[0-9A-Fa-f]{2}/.test(cleaned)) {
-      const decoded = decodeURIComponent(cleaned);
-      if (decoded === cleaned) break;
-      cleaned = decoded;
-    }
-
-    return cleaned;
+    return JSON.parse(value) as T;
   } catch {
-    return value;
+    return fallback;
   }
+}
+
+function buildCombinedEmail(report: FinalReport) {
+  return `Subject: ${report.subject}
+
+${report.greeting}
+
+WHAT I SAW
+${report.whatISaw}
+
+WHAT I DID
+${report.whatIDid}
+
+WHAT TO EXPECT
+${report.whatToExpect}
+
+WHAT I RECOMMENDED
+${report.whatIRecommend}
+
+${report.closing}`;
 }
 
 export async function POST(req: Request) {
@@ -72,14 +87,15 @@ export async function POST(req: Request) {
         {
           type: "input_text",
           text: `
-You are analyzing technician-uploaded pest control photos.
+You are analyzing technician-uploaded pest control photos for INTERNAL support only.
 
 Your job:
-- identify ONLY clearly visible conducive conditions or clearly visible pest-related findings
+- identify ONLY clearly visible pest-related conducive conditions or clearly visible pest-related findings
 - do NOT infer hidden problems
 - do NOT guess
-- do NOT repeat technician notes
+- do NOT repeat technician notes unless they are actually visible in the image
 - if no relevant issue is clearly visible, return an empty findings array
+- do NOT create customer-facing language
 
 Return ONLY valid JSON in this exact format:
 {
@@ -123,20 +139,19 @@ If nothing relevant is clearly visible, return:
 
       const rawVisualOutput = imageResponse.output_text?.trim() || "";
 
-      try {
-        const parsed = JSON.parse(rawVisualOutput);
-        visualFindings = Array.isArray(parsed.visual_findings)
-          ? parsed.visual_findings.filter(
-              (item: VisualFinding) =>
-                item?.clearly_visible === true &&
-                typeof item?.finding === "string"
-            )
-          : [];
-      } catch (parseError) {
-        console.error("Visual findings JSON parse error:", parseError);
-        console.error("Raw visual output:", rawVisualOutput);
-        visualFindings = [];
-      }
+      const parsed = safeJsonParse<{ visual_findings?: VisualFinding[] }>(
+        rawVisualOutput,
+        { visual_findings: [] }
+      );
+
+      visualFindings = Array.isArray(parsed.visual_findings)
+        ? parsed.visual_findings.filter(
+            (item) =>
+              item?.clearly_visible === true &&
+              typeof item?.finding === "string" &&
+              item.finding.trim().length > 0
+          )
+        : [];
     }
 
     const visualFindingText =
@@ -149,52 +164,38 @@ Write a professional Fox Pest Control technician service summary email.
 
 Use the following information:
 
-Customer Name: ${customerName}
-Service Address: ${serviceAddress}
-Pest Type: ${pestType}
+Customer Name: ${customerName || "Customer"}
+Service Address: ${serviceAddress || "Service Address"}
+Pest Type: ${pestType || "Not provided"}
 Inspection Findings: ${findings || "None provided"}
 Treatment Performed: ${treatment || "None provided"}
 Technician Notes: ${notes || "None provided"}
 
-Validated Additional Findings:
+Validated Internal Visual Support:
 ${visualFindingText}
 
 Rules:
 - Use the technician's written findings, treatment, and notes as the main source.
-- Use the validated additional findings ONLY if they are listed above.
-- If "Validated Additional Findings" is "None", do not add any image-based findings.
+- Use the validated internal visual support ONLY if it is listed above.
+- If "Validated Internal Visual Support" is "None", do not add any image-based findings.
 - Do NOT mention photos, images, uploads, or visual analysis.
 - Do NOT say "based on the pictures" or anything similar.
-- If the images do not clearly show a conducive condition, do not include one.
+- Do NOT create a separate visual findings section.
+- Keep the same Fox Pest Control style and sections.
+- Use the technician-entered treatment as the source for WHAT I DID.
 - Write naturally as part of the service summary.
+- Return ONLY valid JSON.
 
-Format the email exactly using these sections:
-
-Subject: Fox Pest Control Service Summary – ${serviceAddress}
-
-Hello ${customerName},
-
-WHAT I SAW
-Explain what pest activity or conducive conditions were observed during the inspection.
-
-WHAT I DID
-Explain the treatment the technician performed.
-
-WHAT TO EXPECT
-Explain what the homeowner should expect over the next few days after treatment.
-
-WHAT I RECOMMENDED
-Provide clear recommendations to reduce pest activity around the home.
-
-End the email exactly with this message:
-
-Thank you for choosing Fox Pest Control!
-Please consider leaving us a 5-Star Rating if you were happy with today's service.
-
-Use a friendly, professional tone that is easy for homeowners to understand.
-
-Do not URL-encode, percent-encode, or format as a mailto link.
-Return normal readable plain text only.
+Return JSON in this exact format:
+{
+  "subject": "Fox Pest Control Service Summary – ${serviceAddress || "Service Address"}",
+  "greeting": "Hello ${customerName || "Customer"},",
+  "whatISaw": "",
+  "whatIDid": "",
+  "whatToExpect": "",
+  "whatIRecommend": "",
+  "closing": "Thank you for choosing Fox Pest Control!\\nPlease consider leaving us a 5-Star Rating if you were happy with today's service."
+}
     `.trim();
 
     const response = await client.responses.create({
@@ -202,10 +203,29 @@ Return normal readable plain text only.
       input: prompt,
     });
 
-    const cleanOutput = cleanGeneratedText(response.output_text);
+    const rawReportOutput = response.output_text?.trim() || "";
+
+    const fallbackReport: FinalReport = {
+      subject: `Fox Pest Control Service Summary – ${serviceAddress || "Service Address"}`,
+      greeting: `Hello ${customerName || "Customer"},`,
+      whatISaw:
+        "Today I inspected the property for reported pest activity and reviewed the areas of concern noted during service.",
+      whatIDid:
+        "I completed the treatment and service steps based on the conditions observed and the needs discussed during today's visit.",
+      whatToExpect:
+        "You may continue to notice some activity shortly after treatment as the product takes effect over the next several days.",
+      whatIRecommend:
+        "Please continue to monitor the affected areas and follow the service recommendations provided to help reduce future pest activity.",
+      closing:
+        "Thank you for choosing Fox Pest Control!\nPlease consider leaving us a 5-Star Rating if you were happy with today's service.",
+    };
+
+    const report = safeJsonParse<FinalReport>(rawReportOutput, fallbackReport);
+    const output = buildCombinedEmail(report);
 
     return NextResponse.json({
-      output: cleanOutput,
+      report,
+      output,
       visualFindings,
       imageUrls: images.map((image) => image.publicUrl),
     });

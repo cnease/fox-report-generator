@@ -35,7 +35,6 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
       <header className="safe-top sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
@@ -46,9 +45,7 @@ export default function AccountPage() {
             />
             <div className="flex flex-col">
               <h1 className="text-base font-semibold">Fox Reports</h1>
-              <span className="text-xs text-gray-500">
-                Account Settings
-              </span>
+              <span className="text-xs text-gray-500">Account Settings</span>
             </div>
           </div>
 
@@ -56,19 +53,15 @@ export default function AccountPage() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="flex-1 px-4 pb-32 pt-4">
         <div className="mx-auto max-w-3xl space-y-6">
-          {/* Font Size */}
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-medium text-gray-700">Text Size</p>
-
             <div className="mt-3">
               <FontSizeControl />
             </div>
           </div>
 
-          {/* Change Password */}
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-medium text-gray-700">
               Change Password
@@ -97,7 +90,6 @@ export default function AccountPage() {
         </div>
       </main>
 
-      {/* Bottom Nav */}
       <BottomNav />
     </div>
   );

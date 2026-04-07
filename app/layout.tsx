@@ -17,23 +17,19 @@ export const metadata: Metadata = {
   title: "Fox Report Generator",
   description: "Fox Pest Control report generator",
   manifest: "/manifest.webmanifest",
-
-  // ✅ Improves iPhone app experience
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Fox Reports",
   },
-
-  // Optional but nice polish
   applicationName: "Fox Reports",
 };
 
 export const viewport: Viewport = {
-  width: "device-width",        // ✅ fixes “small screen” issue
-  initialScale: 1,              // ✅ prevents zoomed-out UI
-  maximumScale: 1,              // ✅ locks scaling (optional)
-  viewportFit: "cover",         // ✅ enables safe-area (notch support)
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
   themeColor: "#111111",
 };
 
@@ -48,7 +44,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
       >
         <PwaRegister />
-        {children}
+        <div id="app-root" className="app-scale min-h-screen">
+          {children}
+        </div>
       </body>
     </html>
   );

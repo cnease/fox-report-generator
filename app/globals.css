@@ -4,6 +4,9 @@
 :root {
   --background: #f9fafb;
   --foreground: #111827;
+
+  /* ✅ Global font scaling control */
+  --app-font-size: 16px;
 }
 
 /* Keeps theme mappings */
@@ -22,8 +25,10 @@ body {
   height: 100%;
 }
 
+/* ✅ This is the magic — scales EVERYTHING naturally */
 html {
   -webkit-text-size-adjust: 100%;
+  font-size: var(--app-font-size);
 }
 
 body {

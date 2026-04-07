@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Fox Report Generator",
   description: "Fox Pest Control report generator",
   manifest: "/manifest.webmanifest",

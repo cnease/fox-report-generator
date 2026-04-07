@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+const OPTIONS = [
+  { label: "Small", value: 14 },
+  { label: "Default", value: 16 },
+  { label: "Large", value: 20 },
+  { label: "Extra Large", value: 26 },
+];
+
 export default function FontSizeControl() {
   const [size, setSize] = useState(16);
 
@@ -18,34 +25,41 @@ export default function FontSizeControl() {
   }, []);
 
   const updateSize = (value: number) => {
-    const newSize = Math.min(20, Math.max(14, value));
-    setSize(newSize);
+    setSize(value);
 
     document.documentElement.style.setProperty(
       "--app-font-size",
-      `${newSize}px`
+      `${value}px`
     );
 
-    localStorage.setItem("app-font-size", newSize.toString());
+    localStorage.setItem("app-font-size", value.toString());
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <button
-        onClick={() => updateSize(size - 1)}
-        className="rounded-lg border px-3 py-1 text-sm"
-      >
-        A-
-      </button>
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        {OPTIONS.map((option) => {
+          const isActive = size === option.value;
 
-      <span className="text-xs text-gray-500">{size}px</span>
+          return (
+            <button
+              key={option.value}
+              onClick={() => updateSize(option.value)}
+              className={`rounded-xl border px-4 py-3 text-sm font-medium transition ${
+                isActive
+                  ? "bg-black text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
 
-      <button
-        onClick={() => updateSize(size + 1)}
-        className="rounded-lg border px-3 py-1 text-sm"
-      >
-        A+
-      </button>
+      <p className="text-center text-xs text-gray-500">
+        Current: {size}px
+      </p>
     </div>
   );
 }

@@ -73,8 +73,6 @@ export default function UserHeader() {
   return (
     <div className="mb-6 rounded-xl bg-gray-100 p-4 text-gray-900 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        
-        {/* USER INFO */}
         <div>
           <p className="text-xs uppercase tracking-wide text-gray-500">
             Signed in as
@@ -90,19 +88,7 @@ export default function UserHeader() {
           </p>
         </div>
 
-        {/* NAV BUTTONS */}
         <div className="flex flex-wrap gap-2">
-          <Link href="/" className={linkClass("/", "bg-gray-800 hover:bg-gray-900")}>
-            Home
-          </Link>
-
-          <Link
-            href="/reports"
-            className={linkClass("/reports", "bg-green-600 hover:bg-green-700")}
-          >
-            Reports
-          </Link>
-
           {profile?.role === "admin" && (
             <>
               <Link

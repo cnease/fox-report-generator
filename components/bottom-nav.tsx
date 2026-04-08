@@ -34,15 +34,18 @@ export default function BottomNav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`relative z-10 flex min-h-[72px] flex-col items-center justify-center rounded-2xl px-3 py-2 transition-all duration-200 ${
+                className={`relative z-10 flex min-h-[76px] flex-col items-center justify-center rounded-2xl px-3 py-2 transition-all duration-200 active:scale-95 ${
                   isActive ? "text-black" : "text-gray-500"
                 }`}
               >
                 <Icon
-                  size={22}
-                  strokeWidth={isActive ? 2.4 : 2}
-                  className="mb-1.5"
+                  size={30}
+                  strokeWidth={isActive ? 2.8 : 2.2}
+                  className={`mb-1 transition-transform duration-200 ${
+                    isActive ? "scale-110" : "scale-100"
+                  }`}
                 />
+
                 <span
                   className={`text-[12px] leading-none ${
                     isActive ? "font-semibold" : "font-medium"

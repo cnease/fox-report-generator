@@ -14,16 +14,20 @@ export default function InstallAppButton() {
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const checkInstalled = () => {
-      const standalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone ===
-          true;
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone ===
+        true;
 
-      setIsInstalled(standalone);
-    };
+    const ios =
+      /iphone|ipad|ipod/i.test(window.navigator.userAgent) && !standalone;
+
+    setIsInstalled(standalone);
+    setIsIOS(ios);
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
@@ -33,9 +37,8 @@ export default function InstallAppButton() {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setInstallPrompt(null);
+      setMessage("");
     };
-
-    checkInstalled();
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
@@ -50,38 +53,46 @@ export default function InstallAppButton() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!installPrompt) return;
+    if (isIOS) {
+      setMessage('On iPhone, tap Share, then "Add to Home Screen".');
+      return;
+    }
+
+    if (!installPrompt) {
+      setMessage(
+        "Install is not available yet. Try refreshing in Chrome or using the browser menu."
+      );
+      return;
+    }
 
     await installPrompt.prompt();
     const choice = await installPrompt.userChoice;
 
     if (choice.outcome === "accepted") {
       setInstallPrompt(null);
+      setMessage("");
+    } else {
+      setMessage("Install was dismissed.");
     }
   };
 
   if (isInstalled) return null;
 
-  if (!installPrompt) {
-    return (
+  return (
+    <div className="flex flex-col items-end gap-1">
       <button
         type="button"
-        disabled
-        className="rounded-md bg-gray-300 px-4 py-2 text-sm font-medium text-gray-600 cursor-not-allowed"
-        title="Install option will appear when supported by your browser"
+        onClick={handleInstallClick}
+        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
       >
         Install App
       </button>
-    );
-  }
 
-  return (
-    <button
-      type="button"
-      onClick={handleInstallClick}
-      className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-    >
-      Install App
-    </button>
+      {message ? (
+        <p className="max-w-[220px] text-right text-xs text-gray-500">
+          {message}
+        </p>
+      ) : null}
+    </div>
   );
 }

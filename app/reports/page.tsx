@@ -207,6 +207,7 @@ export default function ReportsPage() {
                           <img
                             src={url}
                             alt={`Report photo ${index + 1}`}
+                            loading="lazy"
                             className="h-28 w-full object-cover"
                           />
                         </a>

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import CopyButton from "@/components/copy-button";
 
@@ -21,6 +21,17 @@ type FinalReport = {
   closing: string;
 };
 
+type ReportDraft = {
+  customerName: string;
+  serviceAddress: string;
+  pestType: string;
+  findings: string;
+  treatment: string;
+  notes: string;
+};
+
+const DRAFT_STORAGE_KEY = "fox-report-generator-draft";
+
 export default function ReportGenerator() {
   const supabase = useMemo(() => createClient(), []);
 
@@ -34,10 +45,80 @@ export default function ReportGenerator() {
   const [report, setReport] = useState<FinalReport | null>(null);
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [draftStatus, setDraftStatus] = useState("");
 
   const addPhotosInputRef = useRef<HTMLInputElement | null>(null);
   const replacePhotoInputRef = useRef<HTMLInputElement | null>(null);
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!savedDraft) return;
+
+      const parsed: ReportDraft = JSON.parse(savedDraft);
+
+      setCustomerName(parsed.customerName || "");
+      setServiceAddress(parsed.serviceAddress || "");
+      setPestType(parsed.pestType || "");
+      setFindings(parsed.findings || "");
+      setTreatment(parsed.treatment || "");
+      setNotes(parsed.notes || "");
+      setDraftStatus("Draft restored");
+    } catch (error) {
+      console.error("Failed to restore draft:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const draft: ReportDraft = {
+      customerName,
+      serviceAddress,
+      pestType,
+      findings,
+      treatment,
+      notes,
+    };
+
+    const hasContent = Object.values(draft).some(
+      (value) => value.trim().length > 0
+    );
+
+    if (!hasContent) {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      setDraftStatus("");
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        setDraftStatus("Draft saved");
+      } catch (error) {
+        console.error("Failed to save draft:", error);
+        setDraftStatus("Draft save failed");
+      }
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [customerName, serviceAddress, pestType, findings, treatment, notes]);
+
+  function handleClearDraft() {
+    const confirmClear = confirm("Clear saved draft and form fields?");
+    if (!confirmClear) return;
+
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setCustomerName("");
+    setServiceAddress("");
+    setPestType("");
+    setFindings("");
+    setTreatment("");
+    setNotes("");
+    setImages([]);
+    setReport(null);
+    setOutput("");
+    setDraftStatus("Draft cleared");
+  }
 
   function handleReset() {
     const confirmReset = confirm("Clear all inputs and uploaded photos?");
@@ -52,6 +133,8 @@ export default function ReportGenerator() {
     setImages([]);
     setReport(null);
     setOutput("");
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setDraftStatus("");
   }
 
   async function uploadFile(file: File): Promise<UploadedImage> {
@@ -231,6 +314,9 @@ export default function ReportGenerator() {
           }),
         });
       }
+
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      setDraftStatus("");
     } catch (error) {
       console.error(error);
 
@@ -251,7 +337,9 @@ export default function ReportGenerator() {
       {loading && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-white/70 backdrop-blur-sm">
           <div className="rounded-2xl bg-white px-6 py-4 shadow-lg">
-            <p className="text-base font-semibold text-gray-900">Generating summary...</p>
+            <p className="text-base font-semibold text-gray-900">
+              Generating summary...
+            </p>
           </div>
         </div>
       )}
@@ -263,6 +351,23 @@ export default function ReportGenerator() {
         <p className="mb-6 text-sm text-gray-700 sm:text-base">
           Enter inspection details, notes, and photos to generate a standardized customer summary.
         </p>
+
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-900">Draft Status</p>
+            <p className="text-sm text-gray-600">
+              {draftStatus || "No draft saved yet"}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleClearDraft}
+            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          >
+            Clear Draft
+          </button>
+        </div>
 
         <form onSubmit={handleSubmit} className="grid gap-4">
           <input

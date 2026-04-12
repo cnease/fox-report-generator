@@ -2,8 +2,8 @@
 
 import CopyButton from "@/components/copy-button";
 import { useEffect, useMemo, useState } from "react";
-import InstallAppButton from "@/components/install-app-button";
 import BottomNav from "@/components/bottom-nav";
+import UserHeader from "@/components/user-header";
 import { createClient } from "@/lib/supabase/client";
 
 type VisualFinding = {
@@ -44,9 +44,7 @@ export default function ReportsPage() {
           )
           .order("created_at", { ascending: false });
 
-        if (error) {
-          throw new Error(error.message);
-        }
+        if (error) throw new Error(error.message);
 
         setReports(data || []);
       } catch (error) {
@@ -77,27 +75,11 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="safe-top sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <img
-              src="/icons/icon-192.png"
-              alt="Fox Reports"
-              className="h-10 w-10 rounded-xl sm:h-11 sm:w-11"
-            />
-            <div className="flex flex-col">
-              <h1 className="text-[clamp(1rem,2.4vw,1.2rem)] font-semibold leading-tight">
-                Fox Reports
-              </h1>
-              <span className="text-[clamp(0.72rem,1.8vw,0.82rem)] text-gray-500">
-                Pest Control Report Generator
-              </span>
-            </div>
-          </div>
 
-          <div className="shrink-0">
-            <InstallAppButton />
-          </div>
+      {/* ✅ HEADER WITH LOGOUT */}
+      <header className="safe-top sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
+        <div className="mx-auto w-full max-w-5xl px-4 py-3 sm:px-6">
+          <UserHeader />
         </div>
       </header>
 
@@ -106,6 +88,7 @@ export default function ReportsPage() {
           <h1 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">
             Saved Reports
           </h1>
+
           <p className="mb-4 text-sm text-gray-700 sm:text-base">
             View previously generated Fox Pest Control service reports.
           </p>
@@ -156,47 +139,36 @@ export default function ReportsPage() {
                 </div>
 
                 <div className="mb-4 grid gap-2 text-sm text-gray-700">
-                  <p>
-                    <span className="font-semibold">Pest Type:</span>{" "}
-                    {report.pest_type || "-"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Findings:</span>{" "}
-                    {report.findings || "-"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Treatment:</span>{" "}
-                    {report.treatment || "-"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Notes:</span>{" "}
-                    {report.notes || "-"}
-                  </p>
+                  <p><span className="font-semibold">Pest Type:</span> {report.pest_type || "-"}</p>
+                  <p><span className="font-semibold">Findings:</span> {report.findings || "-"}</p>
+                  <p><span className="font-semibold">Treatment:</span> {report.treatment || "-"}</p>
+                  <p><span className="font-semibold">Notes:</span> {report.notes || "-"}</p>
                 </div>
 
-                {report.visual_findings_json &&
-                  report.visual_findings_json.length > 0 && (
-                    <div className="mb-4 rounded-xl bg-blue-50 p-4">
-                      <h3 className="mb-2 font-semibold text-gray-900">
-                        AI-Detected Visual Findings
-                      </h3>
-                      <ul className="space-y-1 text-sm text-gray-700">
-                        {report.visual_findings_json.map((item, index) => (
-                          <li key={`${item.finding}-${index}`}>
-                            • {item.finding}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                {/* ✅ FIXED NULL ERROR */}
+                {(report.visual_findings_json?.length ?? 0) > 0 && (
+                  <div className="mb-4 rounded-xl bg-blue-50 p-4">
+                    <h3 className="mb-2 font-semibold text-gray-900">
+                      AI-Detected Visual Findings
+                    </h3>
+                    <ul className="space-y-1 text-sm text-gray-700">
+                      {report.visual_findings_json?.map((item, index) => (
+                        <li key={`${item.finding}-${index}`}>
+                          • {item.finding}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-                {report.image_urls && report.image_urls.length > 0 && (
+                {/* ✅ FIXED NULL ERROR */}
+                {(report.image_urls?.length ?? 0) > 0 && (
                   <div className="mb-4">
                     <h3 className="mb-2 font-semibold text-gray-900">
                       Uploaded Photos
                     </h3>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {report.image_urls.map((url, index) => (
+                      {report.image_urls?.map((url, index) => (
                         <a
                           key={`${url}-${index}`}
                           href={url}

@@ -35,6 +35,35 @@ function safeJsonParse<T>(value: string, fallback: T): T {
   }
 }
 
+function normalizeWhitespace(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function cleanTechnicianText(value: string) {
+  let cleaned = normalizeWhitespace(value || "");
+
+  if (!cleaned) return "";
+
+  cleaned = cleaned
+    .replace(/\bstored elevated\b/gi, "stored off the ground")
+    .replace(
+      /\bnot properly stored elevated\b/gi,
+      "not properly stored off the ground"
+    )
+    .replace(/\bwould pile on the ground\b/gi, "was piled on the ground")
+    .replace(
+      /\bgrass clippings?,?\s+and the yard\b/gi,
+      "grass clippings in the yard"
+    )
+    .replace(/\bwood pile on the ground\b/gi, "wood pile stored on the ground")
+    .replace(
+      /\bclippings were piled on the ground\b/gi,
+      "grass clippings were piled on the ground"
+    );
+
+  return cleaned;
+}
+
 function buildCombinedEmail(report: FinalReport) {
   return `Subject: ${report.subject}
 
@@ -76,6 +105,10 @@ export async function POST(req: Request) {
       notes: string;
       images: UploadedImage[];
     } = body;
+
+    const cleanedFindings = cleanTechnicianText(findings);
+    const cleanedTreatment = cleanTechnicianText(treatment);
+    const cleanedNotes = cleanTechnicianText(notes);
 
     let visualFindings: VisualFinding[] = [];
 
@@ -167,23 +200,44 @@ Use the following information:
 Customer Name: ${customerName || "Customer"}
 Service Address: ${serviceAddress || "Service Address"}
 Pest Type: ${pestType || "Not provided"}
-Inspection Findings: ${findings || "None provided"}
-Treatment Performed: ${treatment || "None provided"}
-Technician Notes: ${notes || "None provided"}
+Inspection Findings: ${cleanedFindings || "None provided"}
+Treatment Performed: ${cleanedTreatment || "None provided"}
+Technician Notes: ${cleanedNotes || "None provided"}
 
 Validated Internal Visual Support:
 ${visualFindingText}
 
 Rules:
 - Use the technician's written findings, treatment, and notes as the main source.
+
+- Rewrite all technician-entered notes into clear, natural, customer-friendly language.
+- Do NOT copy awkward or unclear phrasing directly from technician input.
+- If wording is unclear, interpret the intent and rewrite it professionally.
+
+- Avoid unnatural or robotic phrasing such as:
+  "stored elevated off the ground"
+  "not properly stored elevated"
+  or similar awkward constructions.
+
+- When referring to yard debris or grass clippings, use natural phrasing such as:
+  "bagged and removed"
+  "properly stored"
+  "cleared from the yard"
+  "not left piled on the ground"
+
+- Always prioritize clarity over literal wording.
+
 - Use the validated internal visual support ONLY if it is listed above.
 - If "Validated Internal Visual Support" is "None", do not add any image-based findings.
+
 - Do NOT mention photos, images, uploads, or visual analysis.
 - Do NOT say "based on the pictures" or anything similar.
 - Do NOT create a separate visual findings section.
+
 - Keep the same Fox Pest Control style and sections.
 - Use the technician-entered treatment as the source for WHAT I DID.
 - Write naturally as part of the service summary.
+
 - Return ONLY valid JSON.
 
 Return JSON in this exact format:

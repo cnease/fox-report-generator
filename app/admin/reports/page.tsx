@@ -161,7 +161,7 @@ export default function AdminReportsPage() {
       (report) => (report.image_urls?.length ?? 0) > 0
     ).length;
 
-    const reportsWithAIFindings = reports.filter(
+    const reportsWithGeneratedFindings = reports.filter(
       (report) => (report.visual_findings_json?.length ?? 0) > 0
     ).length;
 
@@ -169,7 +169,7 @@ export default function AdminReportsPage() {
       totalReports,
       reportsToday,
       reportsWithPhotos,
-      reportsWithAIFindings,
+      reportsWithGeneratedFindings,
     };
   }, [reports]);
 
@@ -206,15 +206,15 @@ export default function AdminReportsPage() {
       "Generated Email",
       "Photo Count",
       "Photo URLs",
-      "AI Finding Count",
-      "AI Findings",
+      "Generated Findings Count",
+      "Generated Findings",
       "User ID",
       "Report ID",
     ];
 
     const rows = filteredReports.map((report) => {
       const photoUrls = (report.image_urls || []).join(" | ");
-      const aiFindings = (report.visual_findings_json || [])
+      const generatedFindings = (report.visual_findings_json || [])
         .map((item) => item.finding)
         .join(" | ");
 
@@ -232,7 +232,7 @@ export default function AdminReportsPage() {
         report.image_urls?.length ?? 0,
         photoUrls,
         report.visual_findings_json?.length ?? 0,
-        aiFindings,
+        generatedFindings,
         report.user_id,
         report.id,
       ];
@@ -324,9 +324,9 @@ export default function AdminReportsPage() {
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <p className="text-sm text-gray-500">With AI Findings</p>
+              <p className="text-sm text-gray-500">With Generated Findings</p>
               <p className="mt-2 text-3xl font-bold text-gray-900">
-                {stats.reportsWithAIFindings}
+                {stats.reportsWithGeneratedFindings}
               </p>
             </div>
           </section>
@@ -468,7 +468,7 @@ export default function AdminReportsPage() {
                       <th className="px-4 py-3 font-semibold">Technician</th>
                       <th className="px-4 py-3 font-semibold">Pest Type</th>
                       <th className="px-4 py-3 font-semibold">Photos</th>
-                      <th className="px-4 py-3 font-semibold">AI Findings</th>
+                      <th className="px-4 py-3 font-semibold">Generated Findings</th>
                       <th className="px-4 py-3 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -476,7 +476,7 @@ export default function AdminReportsPage() {
                   <tbody>
                     {filteredReports.map((report) => {
                       const photoCount = report.image_urls?.length ?? 0;
-                      const aiFindingCount =
+                      const generatedFindingCount =
                         report.visual_findings_json?.length ?? 0;
 
                       return (
@@ -505,7 +505,7 @@ export default function AdminReportsPage() {
                             {report.pest_type || "-"}
                           </td>
                           <td className="px-4 py-3">{photoCount}</td>
-                          <td className="px-4 py-3">{aiFindingCount}</td>
+                          <td className="px-4 py-3">{generatedFindingCount}</td>
                           <td className="px-4 py-3">
                             <button
                               type="button"
@@ -611,7 +611,7 @@ export default function AdminReportsPage() {
               {(selectedReport.visual_findings_json?.length ?? 0) > 0 && (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
                   <h3 className="mb-2 font-semibold text-gray-900">
-                    AI-Detected Visual Findings
+                    Generated Findings
                   </h3>
                   <ul className="space-y-1 text-sm text-gray-700">
                     {selectedReport.visual_findings_json?.map((item, index) => (

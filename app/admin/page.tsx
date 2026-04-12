@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import UserHeader from "@/components/user-header";
+import BottomNav from "@/components/bottom-nav";
 
 type Technician = {
   id: string;
@@ -107,109 +108,108 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <main className="flex-1 p-6 pb-24">
+        <div className="mx-auto max-w-5xl space-y-8">
+          <UserHeader />
 
-        {/* ✅ HEADER ADDED */}
-        <UserHeader />
-
-        {/* CREATE TECHNICIAN */}
-        <div className="rounded-2xl bg-white p-8 text-gray-900 shadow">
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">
-            Admin Dashboard
-          </h1>
-          <p className="mb-6 text-gray-700">
-            Create technician accounts and manage access.
-          </p>
-
-          <form onSubmit={handleCreateTechnician} className="grid gap-4">
-            <input
-              className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-            />
-
-            <input
-              className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-
-            <input
-              className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
-              type="text"
-              placeholder="Starter Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded bg-black p-3 font-semibold text-white disabled:opacity-50"
-            >
-              {loading ? "Creating..." : "Create Technician"}
-            </button>
-          </form>
-
-          {message && (
-            <p className="mt-4 rounded bg-gray-100 p-3 text-sm text-gray-900">
-              {message}
+          <div className="rounded-2xl bg-white p-8 text-gray-900 shadow">
+            <h1 className="mb-2 text-3xl font-bold text-gray-900">
+              Admin Dashboard
+            </h1>
+            <p className="mb-6 text-gray-700">
+              Create technician accounts and manage access.
             </p>
-          )}
-        </div>
 
-        {/* TECHNICIAN LIST */}
-        <div className="rounded-2xl bg-white p-8 text-gray-900 shadow">
-          <h2 className="mb-4 text-2xl font-bold text-gray-900">
-            Technicians
-          </h2>
+            <form onSubmit={handleCreateTechnician} className="grid gap-4">
+              <input
+                className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+                placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
 
-          {loadingTechs ? (
-            <p className="text-gray-900">Loading technicians...</p>
-          ) : technicians.length === 0 ? (
-            <p className="text-gray-900">No technicians found.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse text-gray-900">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="p-3">Name</th>
-                    <th className="p-3">Email</th>
-                    <th className="p-3">Role</th>
-                    <th className="p-3">Must Change Password</th>
-                    <th className="p-3">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {technicians.map((tech) => (
-                    <tr key={tech.id} className="border-b">
-                      <td className="p-3">{tech.full_name || "-"}</td>
-                      <td className="p-3">{tech.email}</td>
-                      <td className="p-3">{tech.role || "-"}</td>
-                      <td className="p-3">
-                        {tech.must_change_password ? "Yes" : "No"}
-                      </td>
-                      <td className="p-3">
-                        {tech.created_at
-                          ? new Date(tech.created_at).toLocaleString()
-                          : "-"}
-                      </td>
+              <input
+                className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+
+              <input
+                className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+                type="text"
+                placeholder="Starter Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded bg-black p-3 font-semibold text-white disabled:opacity-50"
+              >
+                {loading ? "Creating..." : "Create Technician"}
+              </button>
+            </form>
+
+            {message && (
+              <p className="mt-4 rounded bg-gray-100 p-3 text-sm text-gray-900">
+                {message}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-white p-8 text-gray-900 shadow">
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">
+              Technicians
+            </h2>
+
+            {loadingTechs ? (
+              <p className="text-gray-900">Loading technicians...</p>
+            ) : technicians.length === 0 ? (
+              <p className="text-gray-900">No technicians found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse text-gray-900">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="p-3">Name</th>
+                      <th className="p-3">Email</th>
+                      <th className="p-3">Role</th>
+                      <th className="p-3">Must Change Password</th>
+                      <th className="p-3">Created</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {technicians.map((tech) => (
+                      <tr key={tech.id} className="border-b">
+                        <td className="p-3">{tech.full_name || "-"}</td>
+                        <td className="p-3">{tech.email}</td>
+                        <td className="p-3">{tech.role || "-"}</td>
+                        <td className="p-3">
+                          {tech.must_change_password ? "Yes" : "No"}
+                        </td>
+                        <td className="p-3">
+                          {tech.created_at
+                            ? new Date(tech.created_at).toLocaleString()
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
+      </main>
 
-      </div>
-    </main>
+      <BottomNav />
+    </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
-import UserHeader from "@/components/user-header";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import CopyButton from "@/components/copy-button";
 
@@ -23,6 +22,8 @@ type FinalReport = {
 };
 
 export default function ReportGenerator() {
+  const supabase = useMemo(() => createClient(), []);
+
   const [customerName, setCustomerName] = useState("");
   const [serviceAddress, setServiceAddress] = useState("");
   const [pestType, setPestType] = useState("");
@@ -54,7 +55,6 @@ export default function ReportGenerator() {
   }
 
   async function uploadFile(file: File): Promise<UploadedImage> {
-    const supabase = createClient();
     const filePath = `reports/${Date.now()}-${Math.random()
       .toString(36)
       .slice(2)}-${file.name}`;
@@ -70,9 +70,7 @@ export default function ReportGenerator() {
       throw new Error(uploadError.message);
     }
 
-    const { data } = supabase.storage
-      .from("report-images")
-      .getPublicUrl(filePath);
+    const { data } = supabase.storage.from("report-images").getPublicUrl(filePath);
 
     return {
       name: file.name,
@@ -84,7 +82,6 @@ export default function ReportGenerator() {
 
   async function deleteImageFromStorage(path: string) {
     try {
-      const supabase = createClient();
       await supabase.storage.from("report-images").remove([path]);
     } catch (error) {
       console.error("Image delete error:", error);
@@ -210,7 +207,6 @@ export default function ReportGenerator() {
       setReport(data.report);
       setOutput(data.output || "");
 
-      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -251,41 +247,47 @@ export default function ReportGenerator() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 text-gray-900 shadow">
-        <UserHeader />
+    <>
+      {loading && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <div className="rounded-2xl bg-white px-6 py-4 shadow-lg">
+            <p className="text-base font-semibold text-gray-900">Generating summary...</p>
+          </div>
+        </div>
+      )}
 
-        <h1 className="mb-2 text-3xl font-bold text-gray-900">
+      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-4 text-gray-900 shadow sm:p-6">
+        <h1 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">
           Fox Pest Control Report Generator
         </h1>
-        <p className="mb-6 text-gray-700">
+        <p className="mb-6 text-sm text-gray-700 sm:text-base">
           Enter inspection details, notes, and photos to generate a standardized customer summary.
         </p>
 
         <form onSubmit={handleSubmit} className="grid gap-4">
           <input
-            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+            className="rounded-xl border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Customer Name"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
           />
 
           <input
-            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+            className="rounded-xl border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Service Address"
             value={serviceAddress}
             onChange={(e) => setServiceAddress(e.target.value)}
           />
 
           <input
-            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+            className="rounded-xl border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Pest Type"
             value={pestType}
             onChange={(e) => setPestType(e.target.value)}
           />
 
           <textarea
-            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+            className="rounded-xl border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Inspection Findings"
             rows={4}
             value={findings}
@@ -293,7 +295,7 @@ export default function ReportGenerator() {
           />
 
           <textarea
-            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+            className="rounded-xl border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Treatment Performed"
             rows={4}
             value={treatment}
@@ -301,14 +303,14 @@ export default function ReportGenerator() {
           />
 
           <textarea
-            className="rounded border bg-white p-3 text-gray-900 placeholder:text-gray-400"
+            className="rounded-xl border bg-white p-3 text-gray-900 placeholder:text-gray-400"
             placeholder="Technician Notes"
             rows={4}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
 
-          <div className="rounded border border-dashed border-gray-300 p-4">
+          <div className="rounded-xl border border-dashed border-gray-300 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="font-semibold text-gray-900">Photos</h2>
@@ -320,7 +322,7 @@ export default function ReportGenerator() {
               <button
                 type="button"
                 onClick={() => addPhotosInputRef.current?.click()}
-                className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
               >
                 Add Photos
               </button>
@@ -353,6 +355,7 @@ export default function ReportGenerator() {
                     <img
                       src={image.publicUrl}
                       alt={image.name}
+                      loading="lazy"
                       className="h-40 w-full object-cover"
                     />
 
@@ -365,7 +368,7 @@ export default function ReportGenerator() {
                         <button
                           type="button"
                           onClick={() => handleStartReplace(index)}
-                          className="flex-1 rounded bg-yellow-100 px-3 py-2 text-xs font-medium text-yellow-800"
+                          className="flex-1 rounded-lg bg-yellow-100 px-3 py-2 text-xs font-medium text-yellow-800"
                         >
                           Replace
                         </button>
@@ -373,7 +376,7 @@ export default function ReportGenerator() {
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(index)}
-                          className="flex-1 rounded bg-red-100 px-3 py-2 text-xs font-medium text-red-700"
+                          className="flex-1 rounded-lg bg-red-100 px-3 py-2 text-xs font-medium text-red-700"
                         >
                           Remove
                         </button>
@@ -389,7 +392,7 @@ export default function ReportGenerator() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded bg-green-600 p-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+              className="flex-1 rounded-xl bg-green-600 p-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
             >
               {loading ? "Generating..." : "Generate Summary"}
             </button>
@@ -397,7 +400,7 @@ export default function ReportGenerator() {
             <button
               type="button"
               onClick={handleReset}
-              className="flex-1 rounded bg-gray-200 p-3 font-semibold text-gray-900 hover:bg-gray-300"
+              className="flex-1 rounded-xl bg-gray-200 p-3 font-semibold text-gray-900 hover:bg-gray-300"
             >
               Reset Form
             </button>
@@ -406,14 +409,14 @@ export default function ReportGenerator() {
 
         {report && output && (
           <div className="mt-8">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-xl font-semibold text-gray-900">
                 Generated Summary
               </h2>
               <CopyButton text={output} />
             </div>
 
-            <div className="space-y-4 rounded-lg bg-gray-100 p-4 text-sm text-gray-900">
+            <div className="space-y-4 rounded-xl bg-gray-100 p-4 text-sm text-gray-900">
               <div>
                 <p className="font-semibold">{report.subject}</p>
               </div>
@@ -451,19 +454,19 @@ export default function ReportGenerator() {
 
         {!report && output && (
           <div className="mt-8">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-xl font-semibold text-gray-900">
                 Generated Summary
               </h2>
               <CopyButton text={output} />
             </div>
 
-            <pre className="whitespace-pre-wrap rounded-lg bg-gray-100 p-4 text-sm text-gray-900">
+            <pre className="whitespace-pre-wrap rounded-xl bg-gray-100 p-4 text-sm text-gray-900">
               {output}
             </pre>
           </div>
         )}
       </div>
-    </main>
+    </>
   );
 }

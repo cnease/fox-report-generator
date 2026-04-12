@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import UserHeader from "@/components/user-header";
 import BottomNav from "@/components/bottom-nav";
-import LogoutButton from "@/components/logout-button";
 
 type Technician = {
   id: string;
@@ -112,16 +111,8 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 p-6 pb-24">
         <div className="mx-auto max-w-5xl space-y-8">
+          <UserHeader />
 
-          {/* ✅ HEADER + LOGOUT */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <UserHeader />
-            <div className="sm:ml-auto">
-              <LogoutButton />
-            </div>
-          </div>
-
-          {/* CREATE TECHNICIAN */}
           <div className="rounded-2xl bg-white p-8 text-gray-900 shadow">
             <h1 className="mb-2 text-3xl font-bold text-gray-900">
               Admin Dashboard
@@ -173,7 +164,6 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* TECHNICIAN LIST */}
           <div className="rounded-2xl bg-white p-8 text-gray-900 shadow">
             <h2 className="mb-4 text-2xl font-bold text-gray-900">
               Technicians
@@ -216,11 +206,9 @@ export default function AdminPage() {
               </div>
             )}
           </div>
-
         </div>
       </main>
 
-      {/* ✅ BOTTOM NAV */}
       <BottomNav />
     </div>
   );
